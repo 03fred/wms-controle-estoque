@@ -1,189 +1,1331 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f3f6f8">
-  <title>Armazém | Controle de estoque</title>
+  <meta name="theme-color" content="#0f172a">
+  <title>Armazém Pro | WMS & Controle de Estoque</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#bae0fd',
+              300: '#7cc5fb',
+              400: '#36a7f7',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+              950: '#041827',
+            }
+          },
+          boxShadow: {
+            'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+            'card-hover': '0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)',
+            'glow-brand': '0 0 20px -3px rgba(2, 132, 199, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
-    :root { color-scheme: light; }
-    body { font-family: "Segoe UI", "Helvetica Neue", sans-serif; }
-    [hidden] { display: none !important; }
-    .tab-panel[hidden] { display: none; }
-    .nav-button[aria-current="page"] { background: #e8f3fa; color: #075985; }
-    .nav-button[aria-current="page"] .nav-icon { color: #0284c7; }
-    .table-row { transition: background-color 140ms ease; }
-    .toast { animation: toast-in 180ms ease-out; }
-    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+    :root { 
+      color-scheme: light; 
+    }
+    body { 
+      font-family: "Plus Jakarta Sans", sans-serif;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    [hidden] { 
+      display: none !important; 
+    }
+    .tab-panel[hidden] { 
+      display: none; 
+    }
+    
+    /* Navigation Active State in Dark Sidebar */
+    .nav-button[aria-current="page"] { 
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+      color: #ffffff !important; 
+      font-weight: 600;
+      box-shadow: 0 4px 14px -1px rgba(2, 132, 199, 0.4);
+    }
+    .nav-button[aria-current="page"] .nav-icon { 
+      color: #ffffff !important; 
+    }
+    .nav-button:not([aria-current="page"]):hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #f8fafc;
+    }
+    .nav-button:not([aria-current="page"]):hover .nav-icon {
+      color: #38bdf8;
+    }
+
+    /* Table row transitions */
+    .table-row { 
+      transition: background-color 150ms ease; 
+    }
+    
+    /* Smooth toast animation */
+    .toast { 
+      animation: toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1); 
+    }
+    @keyframes toast-in { 
+      from { 
+        opacity: 0; 
+        transform: translateY(12px) scale(0.96); 
+      } 
+      to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+      } 
+    }
+
+    /* Custom sleek scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @media (prefers-reduced-motion: reduce) { 
+      *, *::before, *::after { 
+        animation-duration: 0.01ms !important; 
+        transition-duration: 0.01ms !important; 
+      } 
+    }
   </style>
 </head>
-<body class="min-h-screen bg-[#f3f6f8] text-slate-800 antialiased">
-  <section id="login-screen" class="flex min-h-screen items-center justify-center bg-[#edf3f4] px-4 py-10">
-    <div class="grid w-full max-w-5xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:grid-cols-[1fr_0.85fr]">
-      <div class="hidden min-h-[580px] flex-col justify-between bg-[#0f3d4a] p-10 text-white md:flex">
-        <div class="flex items-center gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10"><i data-lucide="boxes" class="h-5 w-5"></i></span><div><p class="text-sm font-bold">ARMAZÉM</p><p class="text-xs text-white/65">WMS · Operação</p></div></div>
-        <div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-teal-200">Controle de estoque</p><h1 class="mt-3 max-w-sm text-4xl font-bold leading-tight">Tudo em ordem, do recebimento à expedição.</h1><p class="mt-4 max-w-sm text-sm leading-6 text-white/70">Acesse os saldos, acompanhe movimentações e cuide da operação em um só lugar.</p></div>
-        <p class="text-xs text-white/50">Ambiente demonstrativo · Dados salvos neste navegador</p>
+<body class="h-full bg-slate-50/70 text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- ========================================== -->
+  <!-- TELA DE LOGIN                              -->
+  <!-- ========================================== -->
+  <section id="login-screen" class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-4 sm:p-6 lg:p-8">
+    <div class="relative grid w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900 shadow-2xl lg:grid-cols-[1.1fr_1fr]">
+      
+      <!-- Lado Esquerdo: Branding Institucional -->
+      <div class="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950 p-10 text-white lg:flex border-r border-slate-800/60">
+        <!-- Background Glow Accent -->
+        <div class="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full bg-sky-500/15 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-brand-500/15 blur-3xl"></div>
+        
+        <div class="relative z-10 flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 text-white shadow-lg shadow-sky-500/30">
+            <i data-lucide="boxes" class="h-6 w-6"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-extrabold tracking-tight text-white">ARMAZÉM PRO</span>
+              <span class="rounded bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-bold text-sky-400 ring-1 ring-inset ring-sky-400/25">ENTERPRISE</span>
+            </div>
+            <p class="text-xs text-slate-400">Warehouse Management System</p>
+          </div>
+        </div>
+
+        <div class="relative z-10 my-12">
+          <div class="inline-flex items-center gap-2 rounded-full bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-300 ring-1 ring-inset ring-sky-500/20">
+            <span class="h-2 w-2 rounded-full bg-sky-400 animate-pulse"></span>
+            Plataforma Integrada v2.5
+          </div>
+          <h1 class="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-white xl:text-4xl">
+            Gestão inteligente de ponta a ponta na sua operação.
+          </h1>
+          <p class="mt-4 text-sm leading-relaxed text-slate-300">
+            Controle de inventário em tempo real, conferência física por bipagem de código de barras, registro de ponto biométrico/PIN e auditoria financeira.
+          </p>
+
+          <div class="mt-8 grid grid-cols-2 gap-4 border-t border-slate-800/80 pt-6">
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                <i data-lucide="check" class="h-4 w-4"></i>
+              </span>
+              <span class="text-xs font-medium text-slate-300">NF-e & Bipagem USB</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                <i data-lucide="check" class="h-4 w-4"></i>
+              </span>
+              <span class="text-xs font-medium text-slate-300">Ponto com PIN Seguro</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                <i data-lucide="check" class="h-4 w-4"></i>
+              </span>
+              <span class="text-xs font-medium text-slate-300">Auditoria & Divergência</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                <i data-lucide="check" class="h-4 w-4"></i>
+              </span>
+              <span class="text-xs font-medium text-slate-300">Relatórios & DRE</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 flex items-center justify-between text-xs text-slate-400">
+          <span>Armazenamento local criptografado</span>
+          <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Operação 100% pronta</span>
+        </div>
       </div>
-      <div class="flex flex-col justify-center px-6 py-10 sm:px-12">
-        <div class="mb-8 md:hidden"><p class="text-sm font-bold text-slate-900">ARMAZÉM <span class="font-normal text-slate-400">/ CONTROLE DE ESTOQUE</span></p></div>
-        <p class="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">Acesso ao sistema</p><h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900">Entrar na sua conta</h2><p class="mt-2 text-sm text-slate-500">Use seu perfil para acessar o armazém.</p>
-        <form id="login-form" class="mt-7 space-y-4">
-          <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">E-mail</span><input name="email" type="email" autocomplete="username" required placeholder="nome@armazem.local" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"></label>
-          <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Senha</span><input name="password" type="password" autocomplete="current-password" required placeholder="Sua senha" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100"></label>
-          <p id="login-error" class="hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert"></p>
-          <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-md bg-sky-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-600 focus:ring-offset-2"><i data-lucide="log-in" class="h-4 w-4"></i>Entrar no sistema</button>
+
+      <!-- Lado Direito: Formulário de Login -->
+      <div class="flex flex-col justify-center bg-white p-6 sm:p-10 lg:p-12">
+        <div class="mb-6 flex items-center gap-2 lg:hidden">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">
+            <i data-lucide="boxes" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <p class="text-sm font-extrabold text-slate-900">ARMAZÉM PRO</p>
+            <p class="text-[11px] text-slate-500">Controle de Estoque & WMS</p>
+          </div>
+        </div>
+
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-600">Autenticação Corporativa</span>
+          <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Acessar painel</h2>
+          <p class="mt-1.5 text-xs text-slate-500 sm:text-sm">Selecione um perfil de demonstração ou digite suas credenciais.</p>
+        </div>
+
+        <!-- Seletor Rápido de Perfis de Demonstração -->
+        <div class="mt-6 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">
+          <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Acesso Rápido para Teste (Clique para preencher):</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="demo-login-chip group flex flex-col rounded-lg border border-slate-200 bg-white p-2 text-left transition hover:border-brand-500 hover:bg-brand-50/50 hover:shadow-sm" data-email="admin@armazem.local" data-pass="admin123">
+              <span class="text-[11px] font-bold text-slate-800 group-hover:text-brand-700">Admin</span>
+              <span class="text-[9px] text-slate-400 leading-tight">Gestão total</span>
+            </button>
+            <button type="button" class="demo-login-chip group flex flex-col rounded-lg border border-slate-200 bg-white p-2 text-left transition hover:border-brand-500 hover:bg-brand-50/50 hover:shadow-sm" data-email="operador@armazem.local" data-pass="operador123">
+              <span class="text-[11px] font-bold text-slate-800 group-hover:text-brand-700">Operador</span>
+              <span class="text-[9px] text-slate-400 leading-tight">Movimentação</span>
+            </button>
+            <button type="button" class="demo-login-chip group flex flex-col rounded-lg border border-slate-200 bg-white p-2 text-left transition hover:border-brand-500 hover:bg-brand-50/50 hover:shadow-sm" data-email="funcionario@armazem.local" data-pass="ponto123">
+              <span class="text-[11px] font-bold text-slate-800 group-hover:text-brand-700">Funcionário</span>
+              <span class="text-[9px] text-slate-400 leading-tight">Ponto & PIN</span>
+            </button>
+          </div>
+        </div>
+
+        <form id="login-form" class="mt-6 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700">E-mail corporativo</label>
+            <div class="relative mt-1.5">
+              <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i data-lucide="mail" class="h-4 w-4"></i>
+              </span>
+              <input name="email" type="email" autocomplete="username" required placeholder="admin@armazem.local" 
+                     class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700">Senha ou PIN</label>
+            <div class="relative mt-1.5">
+              <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                <i data-lucide="lock" class="h-4 w-4"></i>
+              </span>
+              <input name="password" type="password" autocomplete="current-password" required placeholder="••••••••" 
+                     class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10">
+            </div>
+          </div>
+
+          <p id="login-error" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-800" role="alert"></p>
+
+          <button type="submit" 
+                  class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-brand-600 to-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 transition hover:from-brand-700 hover:to-sky-700 focus:outline-none focus:ring-4 focus:ring-brand-500/30">
+            <i data-lucide="log-in" class="h-4 w-4"></i>
+            Entrar no Sistema
+          </button>
         </form>
-        <div class="mt-7 border-t border-slate-100 pt-5"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Perfis para demonstração</p><div class="mt-3 grid gap-2 text-xs text-slate-600"><p><span class="font-semibold text-slate-800">Administrador:</span> admin@armazem.local / admin123</p><p><span class="font-semibold text-slate-800">Operador:</span> operador@armazem.local / operador123</p><p><span class="font-semibold text-slate-800">Funcionário:</span> funcionario@armazem.local / ponto123</p></div><p class="mt-4 text-[11px] leading-5 text-slate-400">Acesso demonstrativo no navegador. Para uso real, conecte a autenticação a um backend.</p></div>
+
+        <div class="mt-6 border-t border-slate-100 pt-4 text-center">
+          <p class="text-[11px] text-slate-400">Ambiente de demonstração autônomo · Persistência via LocalStorage</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <div id="app-shell" class="hidden min-h-screen lg:flex">
-    <aside class="border-b border-slate-200 bg-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">
-      <div class="flex h-[72px] items-center gap-3 border-b border-slate-100 px-5">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-700 text-white"><i data-lucide="boxes" class="h-5 w-5"></i></div>
-        <div><p class="text-sm font-bold tracking-tight text-slate-900">ARMAZÉM</p><p class="text-xs text-slate-500">Controle de estoque</p></div>
+  <!-- ========================================== -->
+  <!-- APLICAÇÃO PRINCIPAL (APP SHELL)            -->
+  <!-- ========================================== -->
+  <div id="app-shell" class="hidden min-h-screen bg-slate-50/70 flex flex-col lg:flex-row">
+    
+    <!-- Backdrop para menu mobile -->
+    <div id="sidebar-backdrop" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm hidden lg:hidden transition-opacity"></div>
+
+    <!-- Barra Lateral (Sidebar) com Estilo Dark Enterprise -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-800/80 bg-slate-900 text-slate-300 transition-transform duration-200 ease-in-out -translate-x-full lg:translate-x-0">
+      
+      <!-- Topo da Sidebar: Logo & Empresa -->
+      <div class="flex h-[72px] items-center justify-between border-b border-slate-800/80 px-6">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 text-white shadow-md shadow-brand-500/25">
+            <i data-lucide="boxes" class="h-5 w-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-extrabold tracking-tight text-white">ARMAZÉM PRO</span>
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+            <p class="text-[11px] font-medium text-slate-400">Logística & Estoque</p>
+          </div>
+        </div>
+
+        <!-- Botão Fechar no Mobile -->
+        <button id="sidebar-close" type="button" aria-label="Fechar menu" class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
       </div>
-      <div class="px-4 pt-6"><p class="px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Operação</p>
-        <nav class="mt-2 grid grid-cols-4 gap-0.5 sm:grid-cols-5 lg:flex lg:flex-col lg:gap-1" aria-label="Navegação principal">
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="dashboard" aria-current="page"><i data-lucide="layout-dashboard" class="nav-icon h-4 w-4 shrink-0"></i><span>Visão geral</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="products" data-role="admin"><i data-lucide="package" class="nav-icon h-4 w-4 shrink-0"></i><span>Produtos</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="incoming"><i data-lucide="arrow-down-to-line" class="nav-icon h-4 w-4 shrink-0"></i><span>Entrada</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="outgoing"><i data-lucide="arrow-up-from-line" class="nav-icon h-4 w-4 shrink-0"></i><span>Saída</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="scanner" data-role="operation"><i data-lucide="scan-line" class="nav-icon h-4 w-4 shrink-0"></i><span>Bipagem</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="inventory" data-role="operation"><i data-lucide="clipboard-check" class="nav-icon h-4 w-4 shrink-0"></i><span>Inventário</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="timeclock" data-role="timeclock"><i data-lucide="timer" class="nav-icon h-4 w-4 shrink-0"></i><span>Ponto</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="employees" data-role="admin"><i data-lucide="users" class="nav-icon h-4 w-4 shrink-0"></i><span>Funcionários</span></button>
-          <button class="nav-button flex min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-center text-[10px] font-medium leading-tight text-slate-600 transition hover:bg-slate-50 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm" data-tab="reports" data-role="admin"><i data-lucide="chart-no-axes-combined" class="nav-icon h-4 w-4 shrink-0"></i><span>Relatórios</span></button>
-        </nav>
+
+      <!-- Navegação Agrupada -->
+      <div class="flex-1 overflow-y-auto px-4 py-5 space-y-6">
+        
+        <!-- Grupo 1: Geral -->
+        <div>
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Visão Central</p>
+          <nav class="mt-1.5 space-y-1" aria-label="Navegação Central">
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="dashboard" aria-current="page">
+              <i data-lucide="layout-dashboard" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Visão Geral</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Grupo 2: Estoque & Movimentação -->
+        <div>
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Estoque & Logística</p>
+          <nav class="mt-1.5 space-y-1" aria-label="Operações de Estoque">
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="products" data-role="admin">
+              <i data-lucide="package" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Catálogo de Produtos</span>
+            </button>
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="incoming">
+              <i data-lucide="arrow-down-to-line" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Entrada / Recebimento</span>
+            </button>
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="outgoing">
+              <i data-lucide="arrow-up-from-line" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Saída / Expedição</span>
+            </button>
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="scanner" data-role="operation">
+              <i data-lucide="scan-line" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Terminal de Bipagem</span>
+            </button>
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="inventory" data-role="operation">
+              <i data-lucide="clipboard-check" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Inventário & Auditoria</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Grupo 3: RH & Ponto -->
+        <div>
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Gestão & RH</p>
+          <nav class="mt-1.5 space-y-1" aria-label="Gestão de Pessoal">
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="timeclock" data-role="timeclock">
+              <i data-lucide="clock" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Controle de Ponto</span>
+            </button>
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="employees" data-role="admin">
+              <i data-lucide="users" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Quadro de Funcionários</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Grupo 4: Relatórios -->
+        <div>
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Inteligência Operacional</p>
+          <nav class="mt-1.5 space-y-1" aria-label="Relatórios">
+            <button class="nav-button flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-300 transition" data-tab="reports" data-role="admin">
+              <i data-lucide="bar-chart-3" class="nav-icon h-4 w-4 shrink-0 text-slate-400"></i>
+              <span>Relatórios & DRE</span>
+            </button>
+          </nav>
+        </div>
+
       </div>
-      <div class="mt-auto hidden border-t border-slate-100 p-5 lg:block"><div class="flex items-center gap-3"><div id="sidebar-avatar" class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">WMS</div><div class="min-w-0"><p id="sidebar-user" class="truncate text-sm font-semibold text-slate-700">Usuário</p><p id="sidebar-role" class="text-xs text-slate-500">Perfil</p></div></div></div>
+
+      <!-- Rodapé da Sidebar: Perfil do Usuário Conectado -->
+      <div class="border-t border-slate-800/80 p-4">
+        <div class="flex items-center gap-3 rounded-xl bg-slate-800/50 p-2.5">
+          <div id="sidebar-avatar" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-brand-600 to-sky-500 text-xs font-bold text-white shadow-sm">
+            ADM
+          </div>
+          <div class="min-w-0 flex-1">
+            <p id="sidebar-user" class="truncate text-xs font-semibold text-white">Usuário Ativo</p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              <p id="sidebar-role" class="truncate text-[10px] text-slate-400">Perfil</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </aside>
 
-    <main class="min-w-0 flex-1 lg:ml-64">
-      <header class="sticky top-0 z-10 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur sm:px-8">
-        <div><p class="text-xs font-medium text-slate-400">ARMAZÉM <span class="px-1 text-slate-300">/</span> <span id="breadcrumb">VISÃO GERAL</span></p><h1 id="page-title" class="mt-0.5 text-lg font-bold tracking-tight text-slate-900">Visão geral</h1></div>
-        <div class="flex items-center gap-3"><div class="hidden text-right sm:block"><p id="active-user-name" class="text-xs font-semibold text-slate-700"></p><p id="active-user-role" class="text-[11px] text-slate-500"></p></div><button id="logout-button" type="button" title="Sair" aria-label="Sair da conta" class="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:bg-slate-50"><i data-lucide="log-out" class="h-4 w-4"></i></button></div>
+    <!-- Conteúdo Principal -->
+    <main class="min-w-0 flex-1 lg:ml-72 flex flex-col min-h-screen">
+      
+      <!-- Cabeçalho Superior Fixo (Sticky Header) -->
+      <header class="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-8">
+        <div class="flex items-center gap-3">
+          <!-- Botão Hambúrguer Mobile -->
+          <button id="mobile-menu-open" type="button" aria-label="Abrir navegação" class="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 lg:hidden">
+            <i data-lucide="menu" class="h-5 w-5"></i>
+          </button>
+
+          <div>
+            <div class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span>ARMAZÉM</span>
+              <span>/</span>
+              <span id="breadcrumb" class="text-brand-600">VISÃO GERAL</span>
+            </div>
+            <h1 id="page-title" class="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">Visão Geral</h1>
+          </div>
+        </div>
+
+        <!-- Ações do Cabeçalho -->
+        <div class="flex items-center gap-3">
+          
+          <!-- Badge de Status do Sistema -->
+          <div class="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/60 px-3 py-1 text-xs font-medium text-emerald-800 md:flex">
+            <span class="relative flex h-2 w-2">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+            <span>Operação Online</span>
+          </div>
+
+          <!-- Perfil do Usuário Ativo -->
+          <div class="hidden text-right sm:block">
+            <p id="active-user-name" class="text-xs font-bold text-slate-800 leading-tight">Nome Usuário</p>
+            <p id="active-user-role" class="text-[11px] font-medium text-slate-500 leading-tight">Cargo</p>
+          </div>
+
+          <!-- Botão Desconectar / Sair -->
+          <button id="logout-button" type="button" title="Sair do sistema" aria-label="Sair da conta" 
+                  class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/90 bg-white text-slate-600 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <i data-lucide="log-out" class="h-4 w-4"></i>
+          </button>
+        </div>
       </header>
 
-      <div class="mx-auto max-w-[1440px] p-5 sm:p-8">
+      <!-- Painéis de Conteúdo -->
+      <div class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+
+        <!-- ========================================== -->
+        <!-- PAINEL 1: DASHBOARD (VISÃO GERAL)          -->
+        <!-- ========================================== -->
         <section id="panel-dashboard" class="tab-panel space-y-6" aria-labelledby="page-title">
-          <div class="flex flex-wrap items-end justify-between gap-3"><div><h2 class="text-xl font-bold tracking-tight text-slate-900">Resumo da operação</h2><p class="mt-1 text-sm text-slate-500">Acompanhe o estoque e as movimentações do armazém.</p></div><p id="today-label" class="text-sm text-slate-500"></p></div>
+          
+          <!-- Banner de Boas-vindas -->
+          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-sky-950 p-6 text-white shadow-lg">
+            <div class="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-sky-500/20 blur-2xl"></div>
+            <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-sky-400/10 px-2.5 py-0.5 text-xs font-semibold text-sky-300 ring-1 ring-inset ring-sky-400/20">
+                  <i data-lucide="warehouse" class="h-3.5 w-3.5"></i> Centro de Distribuição Ativo
+                </span>
+                <h2 class="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">Painel de Controle Operacional</h2>
+                <p class="mt-1 text-xs text-slate-300 sm:text-sm">Acompanhe saldos, movimentações recentes e alertas de reposição em tempo real.</p>
+              </div>
+              <div class="rounded-xl bg-white/10 px-4 py-2.5 backdrop-blur-md border border-white/10 text-right">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-300">Data do Sistema</p>
+                <p id="today-label" class="text-xs font-semibold text-white"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards de Métricas Principais (KPIs) -->
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <article class="rounded-lg border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-slate-500">Unidades em estoque</p><span class="rounded-md bg-sky-50 p-2 text-sky-700"><i data-lucide="package-check" class="h-4 w-4"></i></span></div><p id="metric-stock" class="mt-4 text-3xl font-bold tracking-tight text-slate-900">0</p><p id="metric-products" class="mt-1 text-xs text-slate-500">0 produtos cadastrados</p></article>
-            <article class="rounded-lg border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-slate-500">Entradas no mês</p><span class="rounded-md bg-emerald-50 p-2 text-emerald-700"><i data-lucide="arrow-down-to-line" class="h-4 w-4"></i></span></div><p id="metric-in" class="mt-4 text-3xl font-bold tracking-tight text-slate-900">0</p><p class="mt-1 text-xs text-slate-500">Unidades recebidas</p></article>
-            <article class="rounded-lg border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-slate-500">Saídas no mês</p><span class="rounded-md bg-amber-50 p-2 text-amber-700"><i data-lucide="arrow-up-from-line" class="h-4 w-4"></i></span></div><p id="metric-out" class="mt-4 text-3xl font-bold tracking-tight text-slate-900">0</p><p class="mt-1 text-xs text-slate-500">Unidades expedidas</p></article>
-            <article class="rounded-lg border border-red-200 bg-red-50/60 p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-red-800">Estoque crítico</p><span id="critical-badge" class="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white">0</span></div><p id="metric-critical" class="mt-4 text-3xl font-bold tracking-tight text-red-900">0</p><p class="mt-1 text-xs text-red-700">Produtos no mínimo ou abaixo</p></article>
+            
+            <!-- KPI 1: Saldo em Estoque -->
+            <article class="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Saldo em Estoque</span>
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50 text-sky-700 ring-1 ring-sky-600/15">
+                  <i data-lucide="package" class="h-4 w-4"></i>
+                </span>
+              </div>
+              <p id="metric-stock" class="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">0</p>
+              <p id="metric-products" class="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                <span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+                0 produtos cadastrados
+              </p>
+            </article>
+
+            <!-- KPI 2: Entradas do Mês -->
+            <article class="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Entradas no Mês</span>
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15">
+                  <i data-lucide="arrow-down-to-line" class="h-4 w-4"></i>
+                </span>
+              </div>
+              <p id="metric-in" class="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">0</p>
+              <p class="mt-1 flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                <i data-lucide="trending-up" class="h-3.5 w-3.5"></i>
+                Unidades recebidas
+              </p>
+            </article>
+
+            <!-- KPI 3: Saídas do Mês -->
+            <article class="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Saídas no Mês</span>
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-600/15">
+                  <i data-lucide="arrow-up-from-line" class="h-4 w-4"></i>
+                </span>
+              </div>
+              <p id="metric-out" class="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">0</p>
+              <p class="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-600">
+                <i data-lucide="truck" class="h-3.5 w-3.5"></i>
+                Unidades expedidas
+              </p>
+            </article>
+
+            <!-- KPI 4: Estoque Crítico -->
+            <article class="relative overflow-hidden rounded-xl border border-rose-200 bg-rose-50/40 p-5 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-rose-800">Estoque Crítico</span>
+                <span id="critical-badge" class="rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">0</span>
+              </div>
+              <p id="metric-critical" class="mt-3 text-3xl font-extrabold tracking-tight text-rose-900 tabular-nums">0</p>
+              <p class="mt-1 flex items-center gap-1.5 text-xs font-medium text-rose-700">
+                <i data-lucide="alert-triangle" class="h-3.5 w-3.5"></i>
+                Abaixo do mínimo de segurança
+              </p>
+            </article>
+
           </div>
-          <div class="grid gap-6 xl:grid-cols-[1.05fr_1.4fr]">
-            <section class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h3 class="font-semibold text-slate-900">Reposição necessária</h3><p class="mt-0.5 text-xs text-slate-500">Itens que exigem atenção</p></div><button data-go="products" class="text-xs font-semibold text-sky-700 hover:text-sky-900">Ver produtos <span aria-hidden="true">→</span></button></div><div id="dashboard-alerts" class="divide-y divide-slate-100"></div></section>
-            <section class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h3 class="font-semibold text-slate-900">Movimentações recentes</h3><p class="mt-0.5 text-xs text-slate-500">Últimos registros de entrada e saída</p></div><span class="rounded bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">HISTÓRICO</span></div><div id="dashboard-movements" class="divide-y divide-slate-100"></div></section>
+
+          <!-- Barra de Atalhos Rápidos da Operação -->
+          <div class="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Atalhos Operacionais</p>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <button data-go="scanner" class="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-left transition hover:border-brand-500 hover:bg-brand-50/50">
+                <span class="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 text-white shadow-sm"><i data-lucide="scan-line" class="h-4 w-4"></i></span>
+                <div><p class="text-xs font-bold text-slate-800">Bipar Produto</p><p class="text-[10px] text-slate-500">Leitor USB</p></div>
+              </button>
+              <button data-go="incoming" class="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-left transition hover:border-emerald-500 hover:bg-emerald-50/50">
+                <span class="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-white shadow-sm"><i data-lucide="arrow-down-to-line" class="h-4 w-4"></i></span>
+                <div><p class="text-xs font-bold text-slate-800">Nova Entrada</p><p class="text-[10px] text-slate-500">NF-e & Carga</p></div>
+              </button>
+              <button data-go="outgoing" class="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-left transition hover:border-amber-500 hover:bg-amber-50/50">
+                <span class="flex h-8 w-8 items-center justify-center rounded-md bg-amber-600 text-white shadow-sm"><i data-lucide="arrow-up-from-line" class="h-4 w-4"></i></span>
+                <div><p class="text-xs font-bold text-slate-800">Baixa / Saída</p><p class="text-[10px] text-slate-500">Expedição</p></div>
+              </button>
+              <button data-go="inventory" class="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-left transition hover:border-purple-500 hover:bg-purple-50/50">
+                <span class="flex h-8 w-8 items-center justify-center rounded-md bg-purple-600 text-white shadow-sm"><i data-lucide="clipboard-check" class="h-4 w-4"></i></span>
+                <div><p class="text-xs font-bold text-slate-800">Inventário</p><p class="text-[10px] text-slate-500">Conferência</p></div>
+              </button>
+            </div>
           </div>
+
+          <!-- Grade Inferior: Alertas de Reposição e Movimentações Recentes -->
+          <div class="grid gap-6 xl:grid-cols-[1.1fr_1.4fr]">
+            
+            <!-- Seção de Alertas -->
+            <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+              <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+                <div class="flex items-center gap-2">
+                  <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100 text-rose-700">
+                    <i data-lucide="alert-octagon" class="h-4 w-4"></i>
+                  </span>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-900">Reposição Necessária</h3>
+                    <p class="text-[11px] text-slate-500">Itens no estoque mínimo ou zerados</p>
+                  </div>
+                </div>
+                <button data-go="products" class="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800">
+                  Ver todos <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+                </button>
+              </div>
+              <div id="dashboard-alerts" class="divide-y divide-slate-100"></div>
+            </section>
+
+            <!-- Seção de Movimentações -->
+            <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+              <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+                <div class="flex items-center gap-2">
+                  <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                    <i data-lucide="history" class="h-4 w-4"></i>
+                  </span>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-900">Movimentações Recentes</h3>
+                    <p class="text-[11px] text-slate-500">Histórico de entradas e saídas</p>
+                  </div>
+                </div>
+                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">AUDITORIA</span>
+              </div>
+              <div id="dashboard-movements" class="divide-y divide-slate-100"></div>
+            </section>
+
+          </div>
+
         </section>
 
+
+        <!-- ========================================== -->
+        <!-- PAINEL 2: PRODUTOS (CATÁLOGO & CADASTRO)   -->
+        <!-- ========================================== -->
         <section id="panel-products" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Produtos</h2><p class="mt-1 text-sm text-slate-500">Cadastre itens e acompanhe os parâmetros de reposição.</p></div>
-          <section class="rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Cadastrar produto</h3><p class="mt-0.5 text-xs text-slate-500">Campos marcados com * são obrigatórios.</p></div><form id="product-form" class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-7">
-            <label class="xl:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Descrição *</span><input name="description" required maxlength="100" placeholder="Ex.: Caixa organizadora" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Unidade *</span><select name="unit" required class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"><option value="UN">UN</option><option value="KG">KG</option><option value="CX">CX</option></select></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Código de barras *</span><input name="barcode" required maxlength="40" placeholder="Ex.: 7890000000001" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Peso unitário (kg)</span><input name="weight" type="number" min="0" step="0.001" value="0" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Valor unitário (R$) *</span><input name="unitValue" type="number" min="0" step="0.01" required placeholder="0,00" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Quantidade atual *</span><input name="quantity" type="number" min="0" step="0.001" required placeholder="0" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Estoque mínimo *</span><input name="minimum" type="number" min="0" step="0.001" required placeholder="0" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <div class="flex items-end xl:col-span-6"><button type="submit" class="inline-flex items-center gap-2 rounded-md bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"><i data-lucide="plus" class="h-4 w-4"></i>Adicionar produto</button></div>
-          </form></section>
-          <section class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"><div><h3 class="font-semibold text-slate-900">Estoque cadastrado</h3><p id="product-count" class="mt-0.5 text-xs text-slate-500">0 itens</p></div><label class="relative block w-full sm:w-72"><i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i><input id="product-search" type="search" placeholder="Buscar produto..." class="w-full rounded-md border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label></div><div class="overflow-x-auto"><table class="w-full min-w-[1020px] text-left text-sm"><thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3 font-semibold">Produto</th><th class="px-4 py-3 font-semibold">Código</th><th class="px-4 py-3 font-semibold">Unidade</th><th class="px-4 py-3 text-right font-semibold">Peso unit.</th><th class="px-4 py-3 text-right font-semibold">Valor unit.</th><th class="px-4 py-3 text-right font-semibold">Saldo atual</th><th class="px-4 py-3 text-right font-semibold">Mínimo</th><th class="px-5 py-3 text-right font-semibold">Status</th></tr></thead><tbody id="products-table" class="divide-y divide-slate-100"></tbody></table></div></section>
-        </section>
+          
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Catálogo de Produtos</h2>
+              <p class="text-xs text-slate-500 sm:text-sm">Cadastre SKUs, códigos de barras e limites de segurança de estoque.</p>
+            </div>
+          </div>
 
-        <section id="panel-incoming" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Entrada de estoque</h2><p class="mt-1 text-sm text-slate-500">Registre recebimentos vinculados à nota fiscal.</p></div>
-          <section class="rounded-lg border border-slate-200 bg-white"><div class="flex items-center gap-3 border-b border-slate-100 px-5 py-4"><span class="rounded-md bg-sky-50 p-2 text-sky-700"><i data-lucide="file-input" class="h-4 w-4"></i></span><div><h3 class="font-semibold text-slate-900">Simulador de NF-e</h3><p class="mt-0.5 text-xs text-slate-500">Importe um XML ou informe a chave/número da nota para preencher a referência.</p></div></div><div class="grid gap-4 p-5 md:grid-cols-2"><label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Arquivo XML</span><input id="xml-file" type="file" accept=".xml,text/xml,application/xml" class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"></label><label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Colar XML ou chave de acesso</span><textarea id="xml-input" rows="2" placeholder="Cole a chave de 44 dígitos ou o conteúdo XML" class="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></textarea></label><div class="flex flex-wrap items-center gap-3 md:col-span-2"><button id="parse-xml" type="button" class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"><i data-lucide="scan-text" class="h-4 w-4"></i>Usar referência da NF-e</button><p class="text-xs text-slate-500">Importação demonstrativa: os dados do XML não são transmitidos nem validados fiscalmente.</p></div></div></section>
-          <section class="rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Lançamento manual</h3><p class="mt-0.5 text-xs text-slate-500">O saldo é atualizado assim que a entrada é registrada.</p></div><form id="incoming-form" class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
-            <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Produto *</span><select name="productId" required class="product-select w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></select></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Quantidade recebida *</span><input name="quantity" type="number" min="0.001" step="0.001" required placeholder="0" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Nota fiscal / referência *</span><input name="invoice" required maxlength="100" placeholder="Chave, número ou referência" class="invoice-field w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <div class="flex items-center justify-between rounded-md bg-slate-50 px-4 py-3 sm:col-span-2 xl:col-span-4"><div><p class="text-xs font-semibold text-slate-600">Peso total estimado</p><p class="mt-0.5 text-[11px] text-slate-500">Peso unitário do cadastro × quantidade</p></div><p id="incoming-weight" class="text-lg font-bold text-slate-900">0,000 kg</p></div>
-            <div class="sm:col-span-2 xl:col-span-4"><button type="submit" class="inline-flex items-center gap-2 rounded-md bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800"><i data-lucide="circle-plus" class="h-4 w-4"></i>Registrar entrada</button></div>
-          </form></section>
-        </section>
+          <!-- Formulário de Cadastro de Produto -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <div class="flex items-center gap-2">
+                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-brand-500/20">
+                  <i data-lucide="plus-circle" class="h-4 w-4"></i>
+                </span>
+                <h3 class="text-sm font-bold text-slate-900">Novo Produto</h3>
+              </div>
+            </div>
 
-        <section id="panel-outgoing" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Saída de estoque</h2><p class="mt-1 text-sm text-slate-500">Registre a baixa e mantenha o saldo do armazém atualizado.</p></div>
-          <section class="max-w-4xl overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Registrar saída</h3><p class="mt-0.5 text-xs text-slate-500">O sistema bloqueia quantidades maiores que o saldo disponível.</p></div><form id="outgoing-form" class="grid gap-4 p-5 sm:grid-cols-2">
-            <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Produto *</span><select name="productId" required class="product-select w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></select><span id="outgoing-available" class="mt-1.5 block text-xs text-slate-500">Selecione um produto para consultar o saldo.</span></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Quantidade retirada *</span><input name="quantity" type="number" min="0.001" step="0.001" required placeholder="0" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Destino / cliente *</span><input name="destination" required maxlength="100" placeholder="Ex.: Loja Centro" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Operador *</span><input name="operator" required maxlength="80" placeholder="Nome do operador" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <div class="flex items-end"><button type="submit" class="inline-flex items-center gap-2 rounded-md bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-800"><i data-lucide="arrow-up-from-line" class="h-4 w-4"></i>Confirmar baixa</button></div>
-          </form></section>
-        </section>
+            <form id="product-form" class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-7">
+              <label class="xl:col-span-2">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Descrição do Produto *</span>
+                <input name="description" required maxlength="100" placeholder="Ex.: Caixa organizadora 40L" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
 
-        <section id="panel-employees" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Funcionários</h2><p class="mt-1 text-sm text-slate-500">Cadastre os acessos individuais ao registro de ponto.</p></div>
-          <section class="rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Novo funcionário</h3><p class="mt-0.5 text-xs text-slate-500">O funcionário poderá entrar com e-mail e PIN cadastrados.</p></div><form id="employee-form" class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Nome completo *</span><input name="name" required maxlength="100" placeholder="Nome do funcionário" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">E-mail de acesso *</span><input name="email" type="email" required maxlength="120" placeholder="nome@empresa.com" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Setor *</span><input name="department" required maxlength="80" placeholder="Ex.: Expedição" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">PIN de acesso *</span><input name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" pattern="[0-9]{4,8}" required placeholder="4 a 8 números" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <div class="sm:col-span-2 xl:col-span-4"><button type="submit" class="inline-flex items-center gap-2 rounded-md bg-sky-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-900"><i data-lucide="user-plus" class="h-4 w-4"></i>Cadastrar funcionário</button></div>
-          </form></section>
-          <section class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Equipe cadastrada</h3><p id="employee-count" class="mt-0.5 text-xs text-slate-500"></p></div><div class="overflow-x-auto"><table class="w-full min-w-[600px] text-left text-sm"><thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3 font-semibold">Funcionário</th><th class="px-4 py-3 font-semibold">E-mail</th><th class="px-4 py-3 font-semibold">Setor</th><th class="px-5 py-3 text-right font-semibold">Acesso</th></tr></thead><tbody id="employees-table" class="divide-y divide-slate-100"></tbody></table></div></section>
-        </section>
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Unidade *</span>
+                <select name="unit" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                  <option value="UN">UN (Unidade)</option>
+                  <option value="KG">KG (Quilo)</option>
+                  <option value="CX">CX (Caixa)</option>
+                </select>
+              </label>
 
-        <section id="panel-timeclock" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Controle de ponto</h2><p class="mt-1 text-sm text-slate-500">Registre entrada e saída do expediente com data e hora locais.</p></div>
-          <section class="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-            <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Relógio de ponto</p><p id="clock-current-time" class="mt-4 text-4xl font-bold tracking-tight text-slate-900">--:--:--</p><p id="clock-current-date" class="mt-1 text-sm text-slate-500"></p><label id="attendance-employee-field" class="mt-6 block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Funcionário</span><select id="attendance-employee" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></select></label><div class="mt-5 rounded-md bg-slate-50 px-4 py-3"><p class="text-xs font-semibold text-slate-500">Situação de hoje</p><p id="attendance-status" class="mt-1 text-sm font-semibold text-slate-800">Sem registro de ponto</p></div><button id="attendance-action" type="button" class="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800"><i data-lucide="log-in" class="h-4 w-4"></i><span>Registrar entrada</span></button><p class="mt-3 text-[11px] leading-5 text-slate-400">Registro demonstrativo local; não substitui relógio homologado ou sistema oficial de folha.</p></div>
-            <div class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Marcações recentes</h3><p class="mt-0.5 text-xs text-slate-500">Histórico de entrada e saída</p></div><div class="overflow-x-auto"><table class="w-full min-w-[520px] text-left text-sm"><thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3 font-semibold">Funcionário</th><th class="px-4 py-3 font-semibold">Marcação</th><th class="px-5 py-3 text-right font-semibold">Data e hora</th></tr></thead><tbody id="attendance-table" class="divide-y divide-slate-100"></tbody></table></div></div>
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Código de Barras (EAN) *</span>
+                <input name="barcode" required maxlength="40" placeholder="7890000000001" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Peso Unitário (kg)</span>
+                <input name="weight" type="number" min="0" step="0.001" value="0" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Valor Unitário (R$) *</span>
+                <input name="unitValue" type="number" min="0" step="0.01" required placeholder="0,00" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Quantidade Inicial *</span>
+                <input name="quantity" type="number" min="0" step="0.001" required placeholder="0" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Estoque Mínimo *</span>
+                <input name="minimum" type="number" min="0" step="0.001" required placeholder="0" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <div class="flex items-end xl:col-span-6">
+                <button type="submit" 
+                        class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-brand-500/20 transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <i data-lucide="plus" class="h-4 w-4"></i>
+                  Adicionar ao Catálogo
+                </button>
+              </div>
+            </form>
           </section>
+
+          <!-- Tabela de Produtos -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <div class="flex items-center gap-3">
+                <h3 class="text-sm font-bold text-slate-900">Estoque Cadastrado</h3>
+                <span id="product-count" class="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-xs font-semibold text-slate-700">0 itens</span>
+              </div>
+              
+              <div class="relative w-full sm:w-72">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                  <i data-lucide="search" class="h-4 w-4"></i>
+                </span>
+                <input id="product-search" type="search" placeholder="Buscar por descrição..." 
+                       class="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-9 pr-3 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[980px] text-left text-sm">
+                <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th class="px-5 py-3.5">Produto</th>
+                    <th class="px-4 py-3.5">Código de Barras</th>
+                    <th class="px-4 py-3.5">Unidade</th>
+                    <th class="px-4 py-3.5 text-right">Peso Unit.</th>
+                    <th class="px-4 py-3.5 text-right">Valor Unit.</th>
+                    <th class="px-4 py-3.5 text-right">Saldo Atual</th>
+                    <th class="px-4 py-3.5 text-right">Mínimo</th>
+                    <th class="px-5 py-3.5 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="products-table" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </section>
+
         </section>
 
+
+        <!-- ========================================== -->
+        <!-- PAINEL 3: ENTRADA / RECEBIMENTO            -->
+        <!-- ========================================== -->
+        <section id="panel-incoming" class="tab-panel space-y-6" hidden>
+          
+          <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Entrada de Estoque</h2>
+            <p class="text-xs text-slate-500 sm:text-sm">Registre recebimentos de cargas vinculadas à Nota Fiscal Eletrônica.</p>
+          </div>
+
+          <!-- Módulo NF-e Simulator -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <i data-lucide="file-text" class="h-4 w-4"></i>
+              </span>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Simulador de Importação de NF-e</h3>
+                <p class="text-[11px] text-slate-500">Importe arquivo XML ou cole a chave de 44 dígitos da nota</p>
+              </div>
+            </div>
+
+            <div class="grid gap-4 p-5 md:grid-cols-2">
+              <label class="block">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Arquivo XML da Nota</span>
+                <input id="xml-file" type="file" accept=".xml,text/xml,application/xml" 
+                       class="block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200 cursor-pointer">
+              </label>
+
+              <label class="block">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Chave de Acesso (44 dígitos) ou Conteúdo XML</span>
+                <textarea id="xml-input" rows="2" placeholder="Cole a chave de acesso ou a tag XML da NF-e" 
+                          class="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"></textarea>
+              </label>
+
+              <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-2 border-t border-slate-100 pt-3">
+                <button id="parse-xml" type="button" 
+                        class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                  <i data-lucide="scan-text" class="h-4 w-4 text-brand-600"></i>
+                  Extrair e Preencher Referência
+                </button>
+                <p class="text-[11px] text-slate-400">Importação em modo demonstrativo. Dados fiscais não transmitidos externamente.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Formulário de Lançamento Manual -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Lançamento de Recebimento</h3>
+              <p class="text-[11px] text-slate-500">O saldo do produto é atualizado imediatamente após o registro</p>
+            </div>
+
+            <form id="incoming-form" class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
+              <label class="sm:col-span-2">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Produto a Receber *</span>
+                <select name="productId" required class="product-select w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"></select>
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Quantidade Recebida *</span>
+                <input name="quantity" type="number" min="0.001" step="0.001" required placeholder="0" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Nota Fiscal / Referência *</span>
+                <input name="invoice" required maxlength="100" placeholder="Ex.: NF 000.284" 
+                       class="invoice-field w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <!-- Widget de Peso Estimado -->
+              <div class="flex items-center justify-between rounded-xl bg-slate-50/80 border border-slate-200/70 px-4 py-3 sm:col-span-2 xl:col-span-4">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 ring-1 ring-brand-500/20">
+                    <i data-lucide="scale" class="h-4 w-4"></i>
+                  </span>
+                  <div>
+                    <p class="text-xs font-bold text-slate-800">Peso Total da Carga Estimado</p>
+                    <p class="text-[10px] text-slate-500">Calculado a partir do peso unitário cadastrado × quantidade</p>
+                  </div>
+                </div>
+                <p id="incoming-weight" class="text-lg font-extrabold text-slate-900 tabular-nums">0,000 kg</p>
+              </div>
+
+              <div class="sm:col-span-2 xl:col-span-4 pt-2">
+                <button type="submit" 
+                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <i data-lucide="circle-plus" class="h-4 w-4"></i>
+                  Confirmar Entrada de Estoque
+                </button>
+              </div>
+            </form>
+          </section>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- PAINEL 4: SAÍDA / EXPEDIÇÃO                -->
+        <!-- ========================================== -->
+        <section id="panel-outgoing" class="tab-panel space-y-6" hidden>
+          
+          <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Saída / Expedição</h2>
+            <p class="text-xs text-slate-500 sm:text-sm">Registre a baixa de produtos com verificação de saldo disponível em tempo real.</p>
+          </div>
+
+          <section class="max-w-3xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Registrar Baixa de Mercadoria</h3>
+              <p class="text-[11px] text-slate-500">O sistema bloqueia solicitações que excedam o saldo disponível</p>
+            </div>
+
+            <form id="outgoing-form" class="grid gap-4 p-5 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label class="block">
+                  <span class="mb-1.5 block text-xs font-semibold text-slate-700">Produto a Expedir *</span>
+                  <select name="productId" required class="product-select w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"></select>
+                </label>
+                <!-- Saldo Disponível -->
+                <div class="mt-2 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 border border-slate-200/60 text-xs">
+                  <i data-lucide="info" class="h-4 w-4 text-brand-600 shrink-0"></i>
+                  <span id="outgoing-available" class="font-medium text-slate-600">Selecione um produto para consultar o saldo.</span>
+                </div>
+              </div>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Quantidade Retirada *</span>
+                <input name="quantity" type="number" min="0.001" step="0.001" required placeholder="0" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Destino / Cliente *</span>
+                <input name="destination" required maxlength="100" placeholder="Ex.: Loja Centro" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label class="sm:col-span-2">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Operador Responsável *</span>
+                <input name="operator" required maxlength="80" placeholder="Nome do operador de expedição" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <div class="sm:col-span-2 pt-2">
+                <button type="submit" 
+                        class="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-amber-600/20 transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                  <i data-lucide="arrow-up-from-line" class="h-4 w-4"></i>
+                  Confirmar Baixa de Estoque
+                </button>
+              </div>
+            </form>
+          </section>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- PAINEL 5: TERMINAL DE BIPAGEM (SCANNER)    -->
+        <!-- ========================================== -->
         <section id="panel-scanner" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Bipagem de produtos</h2><p class="mt-1 text-sm text-slate-500">Simule a leitura do código de barras para registrar entradas e saídas.</p></div>
-          <section class="max-w-3xl overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Leitor de código</h3><p class="mt-0.5 text-xs text-slate-500">Digite ou leia o código e confirme para bipar o item.</p></div><form id="scan-form" class="space-y-5 p-5">
-            <fieldset><legend class="mb-2 text-xs font-semibold text-slate-600">Tipo de movimento</legend><div class="grid grid-cols-2 gap-2"><label class="cursor-pointer"><input class="peer sr-only" type="radio" name="scanType" value="entrada" checked><span class="flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-600 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:text-emerald-800"><i data-lucide="arrow-down-to-line" class="h-4 w-4"></i>Entrada</span></label><label class="cursor-pointer"><input class="peer sr-only" type="radio" name="scanType" value="saida"><span class="flex items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-600 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:text-amber-800"><i data-lucide="arrow-up-from-line" class="h-4 w-4"></i>Saída</span></label></div></fieldset>
-            <label class="block"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Código de barras *</span><div class="flex gap-2"><input id="scan-barcode" name="barcode" required autocomplete="off" placeholder="Leia ou digite o código do produto" class="min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-3 font-mono text-base outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"><button type="submit" class="inline-flex shrink-0 items-center gap-2 rounded-md bg-sky-800 px-4 py-3 text-sm font-semibold text-white hover:bg-sky-900"><i data-lucide="scan-line" class="h-4 w-4"></i>Bipar</button></div></label>
-            <div class="grid gap-4 sm:grid-cols-2"><label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Quantidade *</span><input name="quantity" type="number" min="0.001" step="0.001" value="1" required class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label><label id="scan-destination-field" hidden><span class="mb-1.5 block text-xs font-semibold text-slate-600">Destino / cliente *</span><input name="destination" maxlength="100" placeholder="Destino da saída" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label><label id="scan-reference-field"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Referência da entrada</span><input name="reference" maxlength="100" placeholder="NF, pedido ou observação" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label></div>
-            <div id="scan-result" class="hidden rounded-md border border-slate-200 bg-slate-50 px-4 py-3" aria-live="polite"></div>
-          </form><div class="border-t border-slate-100 bg-slate-50 px-5 py-3"><p class="text-[11px] text-slate-500">Exemplo de código: <span class="font-mono">7890000000001</span> · Scanner físico USB pode digitar o código e enviar Enter.</p></div></section>
+          
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Terminal de Bipagem</h2>
+              <p class="text-xs text-slate-500 sm:text-sm">Operação contínua via leitor de código de barras USB ou digitação.</p>
+            </div>
+            <div class="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 border border-emerald-200">
+              <i data-lucide="volume-2" class="h-4 w-4 text-emerald-600"></i>
+              <span>Feedback Sonoro Ativo (Beep)</span>
+            </div>
+          </div>
+
+          <section class="max-w-3xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Leitor Óptico / Entrada Rápida</h3>
+              <p class="text-[11px] text-slate-500">Pressione Enter no leitor para processar automaticamente</p>
+            </div>
+
+            <form id="scan-form" class="space-y-5 p-5">
+              
+              <!-- Seletor do Tipo de Movimentação -->
+              <fieldset>
+                <legend class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Operação</legend>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="cursor-pointer">
+                    <input class="peer sr-only" type="radio" name="scanType" value="entrada" checked>
+                    <span class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-xs font-bold text-slate-600 transition peer-checked:border-emerald-600 peer-checked:bg-emerald-50/80 peer-checked:text-emerald-800 peer-checked:ring-2 peer-checked:ring-emerald-500/20">
+                      <i data-lucide="arrow-down-to-line" class="h-4 w-4"></i>
+                      Entrada de Estoque (+)
+                    </span>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input class="peer sr-only" type="radio" name="scanType" value="saida">
+                    <span class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-xs font-bold text-slate-600 transition peer-checked:border-amber-600 peer-checked:bg-amber-50/80 peer-checked:text-amber-800 peer-checked:ring-2 peer-checked:ring-amber-500/20">
+                      <i data-lucide="arrow-up-from-line" class="h-4 w-4"></i>
+                      Saída de Estoque (−)
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Campo Principal do Código de Barras -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Código de Barras (EAN / Barcode) *</label>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <i data-lucide="barcode" class="h-5 w-5"></i>
+                    </span>
+                    <input id="scan-barcode" name="barcode" required autocomplete="off" placeholder="Aproxime o scanner ou digite o código" 
+                           class="w-full rounded-xl border-2 border-slate-300 bg-slate-50/50 py-3 pl-11 pr-3 font-mono text-base font-semibold text-slate-900 outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-500/15">
+                  </div>
+                  <button type="submit" 
+                          class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-xs font-bold text-white shadow-md transition hover:bg-slate-800">
+                    <i data-lucide="scan-line" class="h-4 w-4"></i>
+                    Bipar Item
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quantidade & Referência -->
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label>
+                  <span class="mb-1.5 block text-xs font-semibold text-slate-700">Quantidade por Bip *</span>
+                  <input name="quantity" type="number" min="0.001" step="0.001" value="1" required 
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                </label>
+
+                <label id="scan-destination-field" hidden>
+                  <span class="mb-1.5 block text-xs font-semibold text-slate-700">Destino / Cliente *</span>
+                  <input name="destination" maxlength="100" placeholder="Ex.: Loja Sul" 
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                </label>
+
+                <label id="scan-reference-field">
+                  <span class="mb-1.5 block text-xs font-semibold text-slate-700">Referência do Lote / NF</span>
+                  <input name="reference" maxlength="100" placeholder="Ex.: NF 1234 ou Palete A" 
+                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                </label>
+              </div>
+
+              <!-- Resultado do Bip -->
+              <div id="scan-result" class="hidden rounded-xl border p-4 transition-all" aria-live="polite"></div>
+
+            </form>
+
+            <div class="border-t border-slate-100 bg-slate-50/80 px-5 py-3 text-xs text-slate-500 flex items-center justify-between">
+              <span>Código demonstrativo sugerido: <strong class="font-mono text-slate-800">7890000000001</strong></span>
+              <span class="text-[11px] text-slate-400">Compatível com leitores óticos 1D e 2D</span>
+            </div>
+          </section>
+
         </section>
 
+
+        <!-- ========================================== -->
+        <!-- PAINEL 6: INVENTÁRIO & CONFERÊNCIA         -->
+        <!-- ========================================== -->
         <section id="panel-inventory" class="tab-panel space-y-6" hidden>
-          <div><h2 class="text-xl font-bold tracking-tight text-slate-900">Inventário</h2><p class="mt-1 text-sm text-slate-500">Confronte a quantidade física com o saldo do sistema e registre diferenças.</p></div>
-          <section class="max-w-4xl overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Conferência de item</h3><p class="mt-0.5 text-xs text-slate-500">Ao confirmar, o saldo passa a refletir a contagem física.</p></div><form id="inventory-form" class="grid gap-4 p-5 sm:grid-cols-2">
-            <label class="sm:col-span-2"><span class="mb-1.5 block text-xs font-semibold text-slate-600">Produto *</span><select name="productId" class="product-select w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100" required></select></label>
-            <div class="rounded-md bg-slate-50 px-4 py-3"><p class="text-xs font-semibold text-slate-500">Saldo no sistema</p><p id="inventory-system-quantity" class="mt-1 text-lg font-bold text-slate-900">Selecione um produto</p></div>
-            <label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Quantidade contada *</span><input name="countedQuantity" type="number" min="0" step="0.001" required placeholder="0" class="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label>
-            <div class="flex items-center justify-between rounded-md border border-slate-200 px-4 py-3 sm:col-span-2"><p class="text-xs font-semibold text-slate-600">Diferença da contagem</p><p id="inventory-difference" class="text-lg font-bold text-slate-700">0</p></div>
-            <div class="sm:col-span-2"><button type="submit" class="inline-flex items-center gap-2 rounded-md bg-sky-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-900"><i data-lucide="clipboard-check" class="h-4 w-4"></i>Confirmar contagem e ajustar saldo</button></div>
-          </form></section>
-          <section class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Últimas contagens</h3></div><div class="overflow-x-auto"><table class="w-full min-w-[650px] text-left text-sm"><thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3 font-semibold">Produto</th><th class="px-4 py-3 text-right font-semibold">Sistema</th><th class="px-4 py-3 text-right font-semibold">Contagem</th><th class="px-4 py-3 text-right font-semibold">Diferença</th><th class="px-5 py-3 text-right font-semibold">Conferido em</th></tr></thead><tbody id="inventory-table" class="divide-y divide-slate-100"></tbody></table></div></section>
+          
+          <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Inventário & Auditoria</h2>
+            <p class="text-xs text-slate-500 sm:text-sm">Confronte a contagem física do armazém com o saldo do sistema e ajuste divergências.</p>
+          </div>
+
+          <section class="max-w-3xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Conferência Física por SKU</h3>
+              <p class="text-[11px] text-slate-500">O saldo do sistema será recalculado para refletir a contagem real</p>
+            </div>
+
+            <form id="inventory-form" class="grid gap-4 p-5 sm:grid-cols-2">
+              <label class="sm:col-span-2">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Produto a Auditar *</span>
+                <select name="productId" class="product-select w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" required></select>
+              </label>
+
+              <!-- Saldo no Sistema -->
+              <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Saldo Atual no Sistema</p>
+                <p id="inventory-system-quantity" class="mt-2 text-2xl font-extrabold text-slate-900 tabular-nums">Selecione um produto</p>
+              </div>
+
+              <!-- Quantidade Contada -->
+              <label class="block">
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Contagem Física Real *</span>
+                <input name="countedQuantity" type="number" min="0" step="0.001" required placeholder="0" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-lg font-bold text-slate-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <!-- Painel de Diferença -->
+              <div class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:col-span-2">
+                <div>
+                  <p class="text-xs font-bold text-slate-800">Divergência da Contagem</p>
+                  <p class="text-[11px] text-slate-500">Diferença apurada entre contagem física e registro lógico</p>
+                </div>
+                <p id="inventory-difference" class="text-2xl font-extrabold text-slate-700 tabular-nums">0</p>
+              </div>
+
+              <div class="sm:col-span-2 pt-2">
+                <button type="submit" 
+                        class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-700">
+                  <i data-lucide="clipboard-check" class="h-4 w-4"></i>
+                  Aprovar Contagem & Ajustar Saldo
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Tabela de Histórico de Inventário -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Auditorias Recentes</h3>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[650px] text-left text-sm">
+                <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th class="px-5 py-3">Produto</th>
+                    <th class="px-4 py-3 text-right">Saldo Anterior</th>
+                    <th class="px-4 py-3 text-right">Contagem Física</th>
+                    <th class="px-4 py-3 text-right">Diferença</th>
+                    <th class="px-5 py-3 text-right">Conferido Em</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-table" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </section>
+
         </section>
 
-        <section id="panel-reports" class="tab-panel space-y-6" hidden>
-          <div class="flex flex-wrap items-end justify-between gap-3"><div><h2 class="text-xl font-bold tracking-tight text-slate-900">Relatórios</h2><p class="mt-1 text-sm text-slate-500">Estimativa por quantidade × valor unitário; não representa recebimentos ou pagamentos bancários.</p></div><label><span class="mb-1.5 block text-xs font-semibold text-slate-600">Período</span><input id="report-month" type="month" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"></label></div>
-          <div class="grid gap-4 md:grid-cols-3">
-            <article class="rounded-lg border border-emerald-200 bg-white p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-slate-500">Valor que entrou</p><span class="rounded-md bg-emerald-50 p-2 text-emerald-700"><i data-lucide="banknote-arrow-down" class="h-4 w-4"></i></span></div><p id="report-in" class="mt-4 text-2xl font-bold tracking-tight text-emerald-800">R$ 0,00</p><p class="mt-1 text-xs text-slate-500">Entradas de estoque no período</p></article>
-            <article class="rounded-lg border border-amber-200 bg-white p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-slate-500">Valor que saiu</p><span class="rounded-md bg-amber-50 p-2 text-amber-700"><i data-lucide="banknote-arrow-up" class="h-4 w-4"></i></span></div><p id="report-out" class="mt-4 text-2xl font-bold tracking-tight text-amber-800">R$ 0,00</p><p class="mt-1 text-xs text-slate-500">Baixas de estoque no período</p></article>
-            <article class="rounded-lg border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><p class="text-sm font-medium text-slate-500">Saldo líquido</p><span class="rounded-md bg-sky-50 p-2 text-sky-700"><i data-lucide="scale" class="h-4 w-4"></i></span></div><p id="report-net" class="mt-4 text-2xl font-bold tracking-tight text-slate-900">R$ 0,00</p><p class="mt-1 text-xs text-slate-500">Entradas menos saídas</p></article>
+
+        <!-- ========================================== -->
+        <!-- PAINEL 7: CONTROLE DE PONTO                -->
+        <!-- ========================================== -->
+        <section id="panel-timeclock" class="tab-panel space-y-6" hidden>
+          
+          <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Controle de Ponto Eletrônico</h2>
+            <p class="text-xs text-slate-500 sm:text-sm">Registro de jornada de trabalho com data e hora sincronizadas localmente.</p>
           </div>
-          <div class="grid gap-6 xl:grid-cols-2">
-            <section class="rounded-lg border border-slate-200 bg-white p-5"><div><h3 class="font-semibold text-slate-900">Movimentação financeira</h3><p class="mt-0.5 text-xs text-slate-500">Entradas e saídas estimadas nos últimos seis meses</p></div><div class="relative mt-5 h-72"><canvas id="cash-chart" aria-label="Gráfico de valores de entrada e saída por mês"></canvas></div></section>
-            <section class="rounded-lg border border-slate-200 bg-white p-5"><div><h3 class="font-semibold text-slate-900">Produtos com maior saída</h3><p class="mt-0.5 text-xs text-slate-500">Quantidade expedida no período selecionado</p></div><div class="relative mt-5 h-72"><canvas id="products-chart" aria-label="Gráfico dos produtos com maior quantidade expedida"></canvas></div></section>
+
+          <div class="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
+            
+            <!-- Terminal de Ponto -->
+            <div class="rounded-xl border border-slate-200/80 bg-white p-6 shadow-card flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Relógio Digital</span>
+                  <span class="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Sincronizado
+                  </span>
+                </div>
+
+                <!-- Display do Relógio -->
+                <div class="mt-4 rounded-xl bg-slate-900 p-6 text-center text-white shadow-inner">
+                  <p id="clock-current-time" class="font-mono text-4xl sm:text-5xl font-extrabold tracking-wider text-white">--:--:--</p>
+                  <p id="clock-current-date" class="mt-2 text-xs font-medium text-slate-400 capitalize"></p>
+                </div>
+
+                <!-- Seletor de Funcionário (Para Gestores) -->
+                <label id="attendance-employee-field" class="mt-5 block">
+                  <span class="mb-1.5 block text-xs font-semibold text-slate-700">Funcionário *</span>
+                  <select id="attendance-employee" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"></select>
+                </label>
+
+                <!-- Status de Hoje -->
+                <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50/80 p-3.5">
+                  <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Situação do Dia</p>
+                  <p id="attendance-status" class="mt-1 text-xs font-bold text-slate-800">Sem registro de ponto hoje.</p>
+                </div>
+              </div>
+
+              <!-- Botão de Bater Ponto -->
+              <div class="mt-6">
+                <button id="attendance-action" type="button" 
+                        class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20">
+                  <i data-lucide="log-in" class="h-4 w-4"></i>
+                  <span>Registrar Entrada</span>
+                </button>
+                <p class="mt-2 text-center text-[10px] text-slate-400">Demonstrativo de registro eletrônico interno.</p>
+              </div>
+            </div>
+
+            <!-- Tabela de Marcações Recentes -->
+            <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+              <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+                <h3 class="text-sm font-bold text-slate-900">Marcações Recentes</h3>
+                <p class="text-[11px] text-slate-500">Histórico de entradas e saídas</p>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full min-w-[500px] text-left text-sm">
+                  <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th class="px-5 py-3">Funcionário</th>
+                      <th class="px-4 py-3">Marcação</th>
+                      <th class="px-5 py-3 text-right">Data & Hora</th>
+                    </tr>
+                  </thead>
+                  <tbody id="attendance-table" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
-          <section class="overflow-hidden rounded-lg border border-slate-200 bg-white"><div class="border-b border-slate-100 px-5 py-4"><h3 class="font-semibold text-slate-900">Produtos que saíram</h3><p class="mt-0.5 text-xs text-slate-500">Resumo das baixas agrupadas por produto</p></div><div class="overflow-x-auto"><table class="w-full min-w-[620px] text-left text-sm"><thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3 font-semibold">Produto</th><th class="px-4 py-3 text-right font-semibold">Quantidade</th><th class="px-4 py-3 text-right font-semibold">Valor unitário</th><th class="px-5 py-3 text-right font-semibold">Total estimado</th></tr></thead><tbody id="report-exits-table" class="divide-y divide-slate-100"></tbody></table></div></section>
+
         </section>
+
+
+        <!-- ========================================== -->
+        <!-- PAINEL 8: FUNCIONÁRIOS (EQUIPE & ACESSOS)  -->
+        <!-- ========================================== -->
+        <section id="panel-employees" class="tab-panel space-y-6" hidden>
+          
+          <div>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Quadro de Funcionários</h2>
+            <p class="text-xs text-slate-500 sm:text-sm">Cadastre membros da equipe e configure PINs individuais para controle de ponto.</p>
+          </div>
+
+          <!-- Cadastro de Funcionário -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Novo Colaborador</h3>
+              <p class="text-[11px] text-slate-500">O funcionário usará seu e-mail e PIN para autenticar o relógio de ponto</p>
+            </div>
+
+            <form id="employee-form" class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Nome Completo *</span>
+                <input name="name" required maxlength="100" placeholder="Nome do funcionário" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">E-mail Corporativo *</span>
+                <input name="email" type="email" required maxlength="120" placeholder="nome@empresa.com" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">Setor / Departamento *</span>
+                <input name="department" required maxlength="80" placeholder="Ex.: Expedição" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <label>
+                <span class="mb-1.5 block text-xs font-semibold text-slate-700">PIN de Acesso (4-8 dígitos) *</span>
+                <input name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" pattern="[0-9]{4,8}" required placeholder="••••" 
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+              </label>
+
+              <div class="sm:col-span-2 xl:col-span-4 pt-2">
+                <button type="submit" 
+                        class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-700">
+                  <i data-lucide="user-plus" class="h-4 w-4"></i>
+                  Cadastrar Colaborador
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Tabela de Equipe -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Equipe Cadastrada</h3>
+              <span id="employee-count" class="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-xs font-semibold text-slate-700"></span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[600px] text-left text-sm">
+                <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th class="px-5 py-3">Funcionário</th>
+                    <th class="px-4 py-3">E-mail</th>
+                    <th class="px-4 py-3">Setor</th>
+                    <th class="px-5 py-3 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="employees-table" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </section>
+
+        </section>
+
+
+        <!-- ========================================== -->
+        <!-- PAINEL 9: RELATÓRIOS & DRE ESTIMADO        -->
+        <!-- ========================================== -->
+        <section id="panel-reports" class="tab-panel space-y-6" hidden>
+          
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Relatórios & Análise Financeira</h2>
+              <p class="text-xs text-slate-500 sm:text-sm">Estimativa operacional calculada por quantidade movimentada × valor unitário.</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-semibold text-slate-600">Período:</label>
+              <input id="report-month" type="month" 
+                     class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+            </div>
+          </div>
+
+          <!-- Cards Financeiros -->
+          <div class="grid gap-4 sm:grid-cols-3">
+            
+            <article class="rounded-xl border border-emerald-200 bg-white p-5 shadow-card">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Valor de Entradas</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/20">
+                  <i data-lucide="arrow-down-left" class="h-4 w-4"></i>
+                </span>
+              </div>
+              <p id="report-in" class="mt-3 text-2xl font-extrabold tracking-tight text-emerald-700 tabular-nums">R$ 0,00</p>
+              <p class="mt-1 text-xs text-slate-500">Recebimentos no período</p>
+            </article>
+
+            <article class="rounded-xl border border-amber-200 bg-white p-5 shadow-card">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Valor de Saídas</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-500/20">
+                  <i data-lucide="arrow-up-right" class="h-4 w-4"></i>
+                </span>
+              </div>
+              <p id="report-out" class="mt-3 text-2xl font-extrabold tracking-tight text-amber-700 tabular-nums">R$ 0,00</p>
+              <p class="mt-1 text-xs text-slate-500">Expedições no período</p>
+            </article>
+
+            <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-card">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Saldo Líquido</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-700 ring-1 ring-sky-500/20">
+                  <i data-lucide="scale" class="h-4 w-4"></i>
+                </span>
+              </div>
+              <p id="report-net" class="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 tabular-nums">R$ 0,00</p>
+              <p class="mt-1 text-xs text-slate-500">Entradas menos Saídas</p>
+            </article>
+
+          </div>
+
+          <!-- Gráficos Analíticos -->
+          <div class="grid gap-6 xl:grid-cols-2">
+            
+            <section class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Movimentação Financeira Semestral</h3>
+                <p class="text-[11px] text-slate-500">Valores consolidados nos últimos 6 meses</p>
+              </div>
+              <div class="relative mt-4 h-72">
+                <canvas id="cash-chart"></canvas>
+              </div>
+            </section>
+
+            <section class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Curva de Saída por Produto</h3>
+                <p class="text-[11px] text-slate-500">Top 5 itens mais expedidos no período selecionado</p>
+              </div>
+              <div class="relative mt-4 h-72">
+                <canvas id="products-chart"></canvas>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- Tabela de Saídas Agrupadas -->
+          <section class="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+            <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+              <h3 class="text-sm font-bold text-slate-900">Resumo de Expedições por SKU</h3>
+              <p class="text-[11px] text-slate-500">Totalização consolidada das baixas do período</p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[620px] text-left text-sm">
+                <thead class="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th class="px-5 py-3">Produto</th>
+                    <th class="px-4 py-3 text-right">Quantidade Expedida</th>
+                    <th class="px-4 py-3 text-right">Preço Médio</th>
+                    <th class="px-5 py-3 text-right">Total Financeiro</th>
+                  </tr>
+                </thead>
+                <tbody id="report-exits-table" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </section>
+
+        </section>
+
       </div>
     </main>
   </div>
-  <div id="toast-region" class="pointer-events-none fixed bottom-5 right-5 z-50 flex w-[calc(100%-2.5rem)] max-w-sm flex-col gap-2" role="status" aria-live="polite"></div>
 
+  <!-- Região de Notificações Toast Flutuante -->
+  <div id="toast-region" class="pointer-events-none fixed bottom-5 right-5 z-50 flex w-[calc(100%-2.5rem)] max-w-sm flex-col gap-2.5" role="status" aria-live="polite"></div>
+
+  <!-- ========================================== -->
+  <!-- SCRIPT OPERACIONAL DO WMS                  -->
+  <!-- ========================================== -->
   <script>
     (() => {
       const STORAGE_KEY = 'armazem-wms-v1';
@@ -196,7 +1338,9 @@
           { id: 'p-1004', description: 'Fita adesiva transparente', barcode: '7890000000004', unit: 'CX', weight: 2.4, unitValue: 12.5, quantity: 12, minimum: 10 },
           { id: 'p-1005', description: 'Etiqueta térmica 100×150', barcode: '7890000000005', unit: 'CX', weight: 3.2, unitValue: 18, quantity: 0, minimum: 6 }
         ],
-        employees: [{ id: 'emp-1001', name: 'Marina Costa', email: 'funcionario@armazem.local', department: 'Estoque', pin: 'ponto123', active: true }],
+        employees: [
+          { id: 'emp-1001', name: 'Marina Costa', email: 'funcionario@armazem.local', department: 'Estoque', pin: 'ponto123', active: true }
+        ],
         attendance: [],
         inventoryCounts: [],
         movements: [
@@ -206,6 +1350,7 @@
           { id: 'm-4', type: 'saida', productId: 'p-1004', description: 'Fita adesiva transparente', quantity: 2, unitValue: 12.5, reference: 'Expedição · Loja Norte', date: demoDate, operator: 'Rafael Lima' }
         ]
       };
+
       let state;
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -213,6 +1358,7 @@
       } catch (error) {
         state = initialState;
       }
+
       state.employees = Array.isArray(state.employees) ? state.employees : initialState.employees;
       state.attendance = Array.isArray(state.attendance) ? state.attendance : [];
       state.inventoryCounts = Array.isArray(state.inventoryCounts) ? state.inventoryCounts : [];
@@ -220,52 +1366,103 @@
         if (!product.barcode) product.barcode = `LEGACY-${product.id || index + 1}`;
       });
 
-      const titles = { dashboard: 'Visão geral', products: 'Produtos', incoming: 'Entrada de estoque', outgoing: 'Saída de estoque', scanner: 'Bipagem de produtos', inventory: 'Inventário', timeclock: 'Controle de ponto', employees: 'Funcionários', reports: 'Relatórios' };
+      const titles = { 
+        dashboard: 'Visão Geral', 
+        products: 'Catálogo de Produtos', 
+        incoming: 'Entrada de Estoque', 
+        outgoing: 'Saída de Estoque', 
+        scanner: 'Terminal de Bipagem', 
+        inventory: 'Inventário & Auditoria', 
+        timeclock: 'Controle de Ponto', 
+        employees: 'Quadro de Funcionários', 
+        reports: 'Relatórios & DRE' 
+      };
+
       const demoUsers = {
         'admin@armazem.local': { password: 'admin123', name: 'Ana Martins', role: 'Administrador' },
         'operador@armazem.local': { password: 'operador123', name: 'Lucas Ferreira', role: 'Operador' },
         'funcionario@armazem.local': { password: 'ponto123', name: 'Marina Costa', role: 'Funcionário', employeeId: 'emp-1001' }
       };
+
       let activeUser = null;
       const numberFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 });
       const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
       const currencyFormat = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
       let cashChart = null;
       let productsChart = null;
+
       const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
       const formatNumber = (value) => numberFormat.format(Number(value) || 0);
       const formatCurrency = (value) => currencyFormat.format(Number(value) || 0);
       const findProduct = (id) => state.products.find((product) => product.id === id);
+
       state.products.forEach((product) => { product.unitValue = Number(product.unitValue) || 0; });
       state.movements.forEach((movement) => {
         if (!Number.isFinite(Number(movement.unitValue))) movement.unitValue = Number(findProduct(movement.productId)?.unitValue) || 0;
       });
+
       const movementTotal = (movement) => Number(movement.quantity || 0) * (Number(movement.unitValue ?? findProduct(movement.productId)?.unitValue) || 0);
+      
       const getStatus = (product) => {
         if (Number(product.quantity) <= Number(product.minimum)) return 'critical';
         if (Number(product.minimum) > 0 && Number(product.quantity) <= Number(product.minimum) * 1.2) return 'warning';
         return 'ok';
       };
+
       const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       const makeId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+      // Toast Notifications Redesenhado
       const toast = (message, kind = 'success') => {
         const region = document.getElementById('toast-region');
-        const palette = kind === 'critical' ? 'border-red-200 bg-red-50 text-red-900' : kind === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900';
-        const icon = kind === 'critical' ? 'triangle-alert' : kind === 'warning' ? 'bell-ring' : 'circle-check';
+        const isCrit = kind === 'critical';
+        const isWarn = kind === 'warning';
+        
+        const badgeColor = isCrit ? 'bg-rose-100 text-rose-700' : isWarn ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+        const borderColor = isCrit ? 'border-rose-200' : isWarn ? 'border-amber-200' : 'border-emerald-200';
+        const iconName = isCrit ? 'alert-triangle' : isWarn ? 'bell' : 'check';
+        
         const item = document.createElement('div');
-        item.className = `toast pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg ${palette}`;
-        item.innerHTML = `<i data-lucide="${icon}" class="mt-0.5 h-4 w-4 shrink-0"></i><p class="text-sm font-medium"></p><button type="button" aria-label="Fechar notificação" class="ml-auto text-current opacity-60 hover:opacity-100"><i data-lucide="x" class="h-4 w-4"></i></button>`;
+        item.className = `toast pointer-events-auto flex items-start gap-3 rounded-xl border bg-white p-3.5 shadow-xl shadow-slate-900/10 ${borderColor}`;
+        item.innerHTML = `
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${badgeColor}">
+            <i data-lucide="${iconName}" class="h-4 w-4"></i>
+          </span>
+          <p class="text-xs font-semibold text-slate-800 leading-snug pt-0.5 flex-1"></p>
+          <button type="button" aria-label="Fechar notificação" class="text-slate-400 hover:text-slate-600 transition">
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        `;
         item.querySelector('p').textContent = message;
         item.querySelector('button').addEventListener('click', () => item.remove());
         region.append(item);
         if (window.lucide) window.lucide.createIcons({ root: item });
         window.setTimeout(() => item.remove(), 5000);
       };
+
+      // Markup das movimentações recentes
       const movementMarkup = (movement) => {
         const incoming = movement.type === 'entrada';
         const date = new Date(movement.date);
-        return `<div class="flex items-center gap-3 px-5 py-3.5"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${incoming ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}"><i data-lucide="${incoming ? 'arrow-down-left' : 'arrow-up-right'}" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-slate-800">${escapeHtml(movement.description)}</p><p class="mt-0.5 truncate text-xs text-slate-500">${escapeHtml(movement.reference || movement.operator || '')} · ${Number.isNaN(date.getTime()) ? '' : dateFormat.format(date)}</p></div><p class="whitespace-nowrap text-sm font-bold ${incoming ? 'text-emerald-700' : 'text-slate-700'}">${incoming ? '+' : '−'}${formatNumber(movement.quantity)}</p></div>`;
+        return `
+          <div class="flex items-center gap-3.5 px-5 py-3.5 hover:bg-slate-50/70 transition-colors">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${incoming ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/20' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-500/20'}">
+              <i data-lucide="${incoming ? 'arrow-down-left' : 'arrow-up-right'}" class="h-4 w-4"></i>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs font-bold text-slate-800">${escapeHtml(movement.description)}</p>
+              <p class="mt-0.5 truncate text-[11px] text-slate-500 font-medium">${escapeHtml(movement.reference || movement.operator || '')} · ${Number.isNaN(date.getTime()) ? '' : dateFormat.format(date)}</p>
+            </div>
+            <div class="text-right">
+              <span class="inline-flex items-center font-mono text-xs font-bold px-2 py-0.5 rounded-md ${incoming ? 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-600/20' : 'text-slate-700 bg-slate-100 ring-1 ring-slate-200'}">
+                ${incoming ? '+' : '−'}${formatNumber(movement.quantity)}
+              </span>
+            </div>
+          </div>
+        `;
       };
+
+      // Renderiza Dashboard
       const renderDashboard = () => {
         const now = new Date();
         const monthMovements = state.movements.filter((movement) => {
@@ -275,32 +1472,82 @@
         const total = state.products.reduce((sum, product) => sum + Number(product.quantity || 0), 0);
         const monthTotal = (type) => monthMovements.filter((movement) => movement.type === type).reduce((sum, movement) => sum + Number(movement.quantity || 0), 0);
         const critical = state.products.filter((product) => getStatus(product) === 'critical');
+
         document.getElementById('metric-stock').textContent = formatNumber(total);
         document.getElementById('metric-products').textContent = `${state.products.length} ${state.products.length === 1 ? 'produto cadastrado' : 'produtos cadastrados'}`;
         document.getElementById('metric-in').textContent = formatNumber(monthTotal('entrada'));
         document.getElementById('metric-out').textContent = formatNumber(monthTotal('saida'));
         document.getElementById('metric-critical').textContent = critical.length;
         document.getElementById('critical-badge').textContent = critical.length;
+
         const alerts = state.products.filter((product) => getStatus(product) !== 'ok').sort((a, b) => Number(a.quantity) - Number(b.quantity));
         document.getElementById('dashboard-alerts').innerHTML = alerts.length ? alerts.map((product) => {
           const isCritical = getStatus(product) === 'critical';
-          return `<div class="flex items-center gap-3 px-5 py-3.5"><span class="h-2 w-2 shrink-0 rounded-full ${isCritical ? 'bg-red-500' : 'bg-amber-500'}"></span><div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-slate-800">${escapeHtml(product.description)}</p><p class="mt-0.5 text-xs text-slate-500">Mínimo: ${formatNumber(product.minimum)} ${escapeHtml(product.unit)}</p></div><span class="rounded px-2 py-1 text-xs font-bold ${isCritical ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}">${formatNumber(product.quantity)} ${escapeHtml(product.unit)}</span></div>`;
-        }).join('') : '<p class="px-5 py-8 text-center text-sm text-slate-500">Nenhum produto precisa de reposição.</p>';
+          return `
+            <div class="flex items-center gap-3.5 px-5 py-3 hover:bg-slate-50/70 transition-colors">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isCritical ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-500/20' : 'bg-amber-50 text-amber-600 ring-1 ring-amber-500/20'}">
+                <i data-lucide="${isCritical ? 'alert-triangle' : 'alert-circle'}" class="h-4 w-4"></i>
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-bold text-slate-800">${escapeHtml(product.description)}</p>
+                <p class="mt-0.5 text-[11px] text-slate-500">Mínimo de segurança: <span class="font-semibold text-slate-700">${formatNumber(product.minimum)} ${escapeHtml(product.unit)}</span></p>
+              </div>
+              <span class="inline-flex items-center font-mono text-xs font-bold px-2 py-0.5 rounded-md ${isCritical ? 'bg-rose-100 text-rose-800 ring-1 ring-rose-600/20' : 'bg-amber-100 text-amber-800 ring-1 ring-amber-600/20'}">
+                ${formatNumber(product.quantity)} ${escapeHtml(product.unit)}
+              </span>
+            </div>
+          `;
+        }).join('') : `
+          <div class="px-5 py-8 text-center">
+            <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20">
+              <i data-lucide="check" class="h-5 w-5"></i>
+            </div>
+            <p class="mt-2.5 text-xs font-bold text-slate-800">Todos os níveis adequados</p>
+            <p class="mt-0.5 text-[11px] text-slate-400">Nenhum produto em nível crítico de reposição.</p>
+          </div>
+        `;
+
         const latest = [...state.movements].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-        document.getElementById('dashboard-movements').innerHTML = latest.length ? latest.map(movementMarkup).join('') : '<p class="px-5 py-8 text-center text-sm text-slate-500">Nenhuma movimentação registrada.</p>';
-        document.getElementById('today-label').textContent = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(now);
+        document.getElementById('dashboard-movements').innerHTML = latest.length ? latest.map(movementMarkup).join('') : '<p class="px-5 py-8 text-center text-xs text-slate-400">Nenhuma movimentação registrada.</p>';
+        const formattedDate = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(now);
+        document.getElementById('today-label').textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
       };
+
+      // Renderiza Produtos
       const renderProducts = () => {
         const query = document.getElementById('product-search').value.trim().toLocaleLowerCase('pt-BR');
         const filtered = state.products.filter((product) => product.description.toLocaleLowerCase('pt-BR').includes(query));
         document.getElementById('product-count').textContent = `${filtered.length} ${filtered.length === 1 ? 'item' : 'itens'}${query ? ' encontrados' : ''}`;
+        
         document.getElementById('products-table').innerHTML = filtered.length ? filtered.map((product) => {
           const status = getStatus(product);
-          const rowClass = status === 'critical' ? 'bg-red-50/70 hover:bg-red-50' : status === 'warning' ? 'bg-amber-50/70 hover:bg-amber-50' : 'hover:bg-slate-50';
-          const badge = status === 'critical' ? '<span class="rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800">Crítico</span>' : status === 'warning' ? '<span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">Próximo do mínimo</span>' : '<span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">Adequado</span>';
-          return `<tr class="table-row ${rowClass}"><td class="px-5 py-3.5"><p class="font-semibold text-slate-800">${escapeHtml(product.description)}</p><p class="mt-0.5 text-[11px] text-slate-400">${escapeHtml(product.id)}</p></td><td class="px-4 py-3.5 font-mono text-xs text-slate-500">${escapeHtml(product.barcode)}</td><td class="px-4 py-3.5 text-slate-600">${escapeHtml(product.unit)}</td><td class="px-4 py-3.5 text-right text-slate-600">${formatNumber(product.weight)} kg</td><td class="px-4 py-3.5 text-right text-slate-600">${formatCurrency(product.unitValue)}</td><td class="px-4 py-3.5 text-right font-semibold ${status === 'critical' ? 'text-red-800' : 'text-slate-800'}">${formatNumber(product.quantity)}</td><td class="px-4 py-3.5 text-right text-slate-600">${formatNumber(product.minimum)}</td><td class="px-5 py-3.5 text-right">${badge}</td></tr>`;
-        }).join('') : '<tr><td colspan="8" class="px-5 py-10 text-center text-sm text-slate-500">Nenhum produto encontrado.</td></tr>';
+          const rowClass = status === 'critical' ? 'bg-rose-50/40 hover:bg-rose-50/70' : status === 'warning' ? 'bg-amber-50/40 hover:bg-amber-50/70' : 'hover:bg-slate-50/80';
+          
+          const badge = status === 'critical' 
+            ? '<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/20"><span class="h-1.5 w-1.5 rounded-full bg-rose-600 animate-pulse"></span>Crítico</span>' 
+            : status === 'warning' 
+            ? '<span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Atenção</span>' 
+            : '<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Adequado</span>';
+
+          return `
+            <tr class="table-row ${rowClass}">
+              <td class="px-5 py-3.5">
+                <p class="font-bold text-slate-900">${escapeHtml(product.description)}</p>
+                <p class="mt-0.5 font-mono text-[10px] text-slate-400">${escapeHtml(product.id)}</p>
+              </td>
+              <td class="px-4 py-3.5 font-mono text-xs font-medium text-slate-600">${escapeHtml(product.barcode)}</td>
+              <td class="px-4 py-3.5 text-xs font-semibold text-slate-700"><span class="rounded bg-slate-100 px-1.5 py-0.5">${escapeHtml(product.unit)}</span></td>
+              <td class="px-4 py-3.5 text-right text-xs font-mono text-slate-600">${formatNumber(product.weight)} kg</td>
+              <td class="px-4 py-3.5 text-right text-xs font-mono text-slate-700">${formatCurrency(product.unitValue)}</td>
+              <td class="px-4 py-3.5 text-right font-mono text-sm font-bold ${status === 'critical' ? 'text-rose-700' : 'text-slate-900'}">${formatNumber(product.quantity)}</td>
+              <td class="px-4 py-3.5 text-right font-mono text-xs text-slate-500">${formatNumber(product.minimum)}</td>
+              <td class="px-5 py-3.5 text-right">${badge}</td>
+            </tr>
+          `;
+        }).join('') : '<tr><td colspan="8" class="px-5 py-10 text-center text-xs text-slate-400">Nenhum produto encontrado.</td></tr>';
       };
+
+      // Selects de produtos
       const renderSelects = () => {
         document.querySelectorAll('.product-select').forEach((select) => {
           const previous = select.value;
@@ -310,6 +1557,7 @@
         updateWeight();
         updateAvailable();
       };
+
       const updateWeight = () => {
         const form = document.getElementById('incoming-form');
         const product = findProduct(form.elements.productId.value);
@@ -317,24 +1565,40 @@
         const total = product ? Number(product.weight || 0) * quantity : 0;
         document.getElementById('incoming-weight').textContent = `${total.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg`;
       };
+
       const updateAvailable = () => {
         const form = document.getElementById('outgoing-form');
         const product = findProduct(form.elements.productId.value);
-        document.getElementById('outgoing-available').textContent = product ? `Saldo disponível: ${formatNumber(product.quantity)} ${product.unit} · Mínimo: ${formatNumber(product.minimum)} ${product.unit}` : 'Selecione um produto para consultar o saldo.';
+        document.getElementById('outgoing-available').textContent = product ? `Saldo disponível: ${formatNumber(product.quantity)} ${product.unit} · Mínimo de segurança: ${formatNumber(product.minimum)} ${product.unit}` : 'Selecione um produto para consultar o saldo.';
       };
+
       const localDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       const getClockEmployeeId = () => activeUser?.role === 'Funcionário' ? activeUser.employeeId : document.getElementById('attendance-employee').value;
+
+      // Renderiza Funcionários
       const renderEmployees = () => {
-        document.getElementById('employee-count').textContent = `${state.employees.length} ${state.employees.length === 1 ? 'funcionário cadastrado' : 'funcionários cadastrados'}`;
-        document.getElementById('employees-table').innerHTML = state.employees.length ? state.employees.map((employee) => `<tr><td class="px-5 py-3.5 font-semibold text-slate-800">${escapeHtml(employee.name)}</td><td class="px-4 py-3.5 text-slate-600">${escapeHtml(employee.email)}</td><td class="px-4 py-3.5 text-slate-600">${escapeHtml(employee.department)}</td><td class="px-5 py-3.5 text-right"><span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">Ativo</span></td></tr>`).join('') : '<tr><td colspan="4" class="px-5 py-10 text-center text-sm text-slate-500">Nenhum funcionário cadastrado.</td></tr>';
+        document.getElementById('employee-count').textContent = `${state.employees.length} ${state.employees.length === 1 ? 'colaborador' : 'colaboradores'}`;
+        document.getElementById('employees-table').innerHTML = state.employees.length ? state.employees.map((employee) => `
+          <tr class="hover:bg-slate-50/70 transition-colors">
+            <td class="px-5 py-3.5">
+              <p class="font-bold text-slate-800">${escapeHtml(employee.name)}</p>
+              <p class="text-[10px] font-mono text-slate-400">${escapeHtml(employee.id)}</p>
+            </td>
+            <td class="px-4 py-3.5 text-xs text-slate-600">${escapeHtml(employee.email)}</td>
+            <td class="px-4 py-3.5 text-xs text-slate-700 font-medium">${escapeHtml(employee.department)}</td>
+            <td class="px-5 py-3.5 text-right"><span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Ativo</span></td>
+          </tr>
+        `).join('') : '<tr><td colspan="4" class="px-5 py-10 text-center text-xs text-slate-400">Nenhum funcionário cadastrado.</td></tr>';
+
         const select = document.getElementById('attendance-employee');
         const previous = select.value;
         select.innerHTML = state.employees.filter((employee) => employee.active).map((employee) => `<option value="${escapeHtml(employee.id)}">${escapeHtml(employee.name)} · ${escapeHtml(employee.department)}</option>`).join('');
         if (activeUser?.role === 'Funcionário') select.value = activeUser.employeeId;
         else if (state.employees.some((employee) => employee.id === previous && employee.active)) select.value = previous;
       };
+
+      // Renderiza Ponto
       const renderAttendance = () => {
-        const employeeSelect = document.getElementById('attendance-employee');
         const employeeField = document.getElementById('attendance-employee-field');
         const isEmployee = activeUser?.role === 'Funcionário';
         employeeField.hidden = isEmployee;
@@ -346,10 +1610,19 @@
         const status = document.getElementById('attendance-status');
         const action = document.getElementById('attendance-action');
         const nextType = lastEvent?.type === 'entrada' ? 'saida' : 'entrada';
+        
         status.textContent = !employee ? 'Cadastre um funcionário para registrar ponto.' : !lastEvent ? 'Sem registro de ponto hoje.' : lastEvent.type === 'entrada' ? `Entrada registrada às ${new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastEvent.date))}.` : `Saída registrada às ${new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(lastEvent.date))}.`;
+        
         action.disabled = !employee;
         action.classList.toggle('opacity-50', !employee);
-        action.querySelector('span').textContent = nextType === 'entrada' ? 'Registrar entrada' : 'Registrar saída';
+        action.querySelector('span').textContent = nextType === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída';
+        
+        if (nextType === 'entrada') {
+          action.className = 'flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 focus:outline-none';
+        } else {
+          action.className = 'flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-amber-600/20 transition hover:bg-amber-700 focus:outline-none';
+        }
+
         const oldIcon = action.querySelector('svg, i');
         if (oldIcon) {
           const icon = document.createElement('i');
@@ -357,29 +1630,58 @@
           icon.className = 'h-4 w-4';
           oldIcon.replaceWith(icon);
         }
+
         const events = state.attendance.filter((event) => !isEmployee || event.employeeId === activeUser.employeeId).slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 12);
-        document.getElementById('attendance-table').innerHTML = events.length ? events.map((event) => `<tr><td class="px-5 py-3.5 font-semibold text-slate-800">${escapeHtml(event.employeeName)}</td><td class="px-4 py-3.5"><span class="rounded-full ${event.type === 'entrada' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'} px-2.5 py-1 text-xs font-semibold">${event.type === 'entrada' ? 'Entrada' : 'Saída'}</span></td><td class="px-5 py-3.5 text-right text-slate-600">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(event.date))}</td></tr>`).join('') : '<tr><td colspan="3" class="px-5 py-10 text-center text-sm text-slate-500">Nenhuma marcação registrada.</td></tr>';
+        document.getElementById('attendance-table').innerHTML = events.length ? events.map((event) => `
+          <tr class="hover:bg-slate-50/70 transition-colors">
+            <td class="px-5 py-3 font-semibold text-slate-800 text-xs">${escapeHtml(event.employeeName)}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center gap-1.5 rounded-full ${event.type === 'entrada' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : 'bg-slate-100 text-slate-700 ring-1 ring-slate-200'} px-2.5 py-0.5 text-[11px] font-semibold">
+                <span class="h-1.5 w-1.5 rounded-full ${event.type === 'entrada' ? 'bg-emerald-500' : 'bg-slate-500'}"></span>
+                ${event.type === 'entrada' ? 'Entrada' : 'Saída'}
+              </span>
+            </td>
+            <td class="px-5 py-3 text-right font-mono text-xs text-slate-600">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(event.date))}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="3" class="px-5 py-10 text-center text-xs text-slate-400">Nenhuma marcação registrada.</td></tr>';
+        
         if (window.lucide) window.lucide.createIcons({ root: action });
       };
+
+      // Inventário
       const updateInventoryDifference = () => {
         const form = document.getElementById('inventory-form');
         const product = findProduct(form.elements.productId.value);
         const systemQuantity = document.getElementById('inventory-system-quantity');
         const differenceElement = document.getElementById('inventory-difference');
         systemQuantity.textContent = product ? `${formatNumber(product.quantity)} ${product.unit}` : 'Selecione um produto';
+        
         const difference = product && form.elements.countedQuantity.value !== '' ? Number(form.elements.countedQuantity.value) - Number(product.quantity) : 0;
         differenceElement.textContent = `${difference > 0 ? '+' : ''}${formatNumber(difference)}${product ? ` ${product.unit}` : ''}`;
-        differenceElement.classList.toggle('text-red-700', difference < 0);
-        differenceElement.classList.toggle('text-emerald-700', difference > 0);
-        differenceElement.classList.toggle('text-slate-700', difference === 0);
+        
+        differenceElement.className = 'text-2xl font-extrabold tabular-nums ' + (difference < 0 ? 'text-rose-600' : difference > 0 ? 'text-emerald-600' : 'text-slate-700');
       };
+
       const renderInventory = () => {
         const records = state.inventoryCounts.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 12);
-        document.getElementById('inventory-table').innerHTML = records.length ? records.map((record) => `<tr><td class="px-5 py-3.5 font-semibold text-slate-800">${escapeHtml(record.description)}</td><td class="px-4 py-3.5 text-right text-slate-600">${formatNumber(record.systemQuantity)}</td><td class="px-4 py-3.5 text-right text-slate-600">${formatNumber(record.countedQuantity)}</td><td class="px-4 py-3.5 text-right font-semibold ${record.difference < 0 ? 'text-red-700' : record.difference > 0 ? 'text-emerald-700' : 'text-slate-600'}">${record.difference > 0 ? '+' : ''}${formatNumber(record.difference)}</td><td class="px-5 py-3.5 text-right text-slate-500">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(record.date))}</td></tr>`).join('') : '<tr><td colspan="5" class="px-5 py-10 text-center text-sm text-slate-500">Nenhuma contagem registrada.</td></tr>';
+        document.getElementById('inventory-table').innerHTML = records.length ? records.map((record) => `
+          <tr class="hover:bg-slate-50/70 transition-colors">
+            <td class="px-5 py-3 font-semibold text-slate-800 text-xs">${escapeHtml(record.description)}</td>
+            <td class="px-4 py-3 text-right font-mono text-xs text-slate-600">${formatNumber(record.systemQuantity)}</td>
+            <td class="px-4 py-3 text-right font-mono text-xs text-slate-800 font-bold">${formatNumber(record.countedQuantity)}</td>
+            <td class="px-4 py-3 text-right font-mono text-xs font-bold ${record.difference < 0 ? 'text-rose-600' : record.difference > 0 ? 'text-emerald-600' : 'text-slate-600'}">
+              ${record.difference > 0 ? '+' : ''}${formatNumber(record.difference)}
+            </td>
+            <td class="px-5 py-3 text-right font-mono text-xs text-slate-400">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(record.date))}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" class="px-5 py-10 text-center text-xs text-slate-400">Nenhuma contagem registrada.</td></tr>';
         updateInventoryDifference();
       };
+
+      // Relatórios & Gráficos
       const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       document.getElementById('report-month').value = monthKey(new Date());
+
       const renderReports = () => {
         const monthInput = document.getElementById('report-month');
         const selectedMonth = monthInput.value || monthKey(new Date());
@@ -387,16 +1689,18 @@
           const date = new Date(movement.date);
           return !Number.isNaN(date.getTime()) && monthKey(date) === selectedMonth;
         });
+
         const entries = monthMovements.filter((movement) => movement.type === 'entrada');
         const exits = monthMovements.filter((movement) => movement.type === 'saida');
         const amountIn = entries.reduce((sum, movement) => sum + movementTotal(movement), 0);
         const amountOut = exits.reduce((sum, movement) => sum + movementTotal(movement), 0);
+        
         document.getElementById('report-in').textContent = formatCurrency(amountIn);
         document.getElementById('report-out').textContent = formatCurrency(amountOut);
+        
         const netElement = document.getElementById('report-net');
         netElement.textContent = formatCurrency(amountIn - amountOut);
-        netElement.classList.toggle('text-red-800', amountIn < amountOut);
-        netElement.classList.toggle('text-slate-900', amountIn >= amountOut);
+        netElement.className = 'mt-3 text-2xl font-extrabold tracking-tight tabular-nums ' + (amountIn < amountOut ? 'text-rose-600' : 'text-slate-900');
 
         const groupedExits = new Map();
         exits.forEach((movement) => {
@@ -405,11 +1709,19 @@
           item.total += movementTotal(movement);
           groupedExits.set(movement.productId, item);
         });
+
         const products = [...groupedExits.values()].sort((a, b) => b.quantity - a.quantity);
         document.getElementById('report-exits-table').innerHTML = products.length ? products.map((item) => {
           const average = item.quantity ? item.total / item.quantity : 0;
-          return `<tr><td class="px-5 py-3.5 font-semibold text-slate-800">${escapeHtml(item.description)}</td><td class="px-4 py-3.5 text-right text-slate-700">${formatNumber(item.quantity)}</td><td class="px-4 py-3.5 text-right text-slate-600">${formatCurrency(average)}</td><td class="px-5 py-3.5 text-right font-semibold text-slate-900">${formatCurrency(item.total)}</td></tr>`;
-        }).join('') : '<tr><td colspan="4" class="px-5 py-10 text-center text-sm text-slate-500">Nenhuma saída registrada neste período.</td></tr>';
+          return `
+            <tr class="hover:bg-slate-50/70 transition-colors">
+              <td class="px-5 py-3 font-bold text-slate-800 text-xs">${escapeHtml(item.description)}</td>
+              <td class="px-4 py-3 text-right font-mono text-xs text-slate-700 font-bold">${formatNumber(item.quantity)}</td>
+              <td class="px-4 py-3 text-right font-mono text-xs text-slate-500">${formatCurrency(average)}</td>
+              <td class="px-5 py-3 text-right font-mono text-xs font-extrabold text-slate-900">${formatCurrency(item.total)}</td>
+            </tr>
+          `;
+        }).join('') : '<tr><td colspan="4" class="px-5 py-10 text-center text-xs text-slate-400">Nenhuma saída registrada neste período.</td></tr>';
 
         const monthBuckets = Array.from({ length: 6 }, (_, index) => {
           const date = new Date();
@@ -417,34 +1729,115 @@
           date.setMonth(date.getMonth() - (5 - index));
           return { key: monthKey(date), label: new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(date), incoming: 0, outgoing: 0 };
         });
+
         state.movements.forEach((movement) => {
           const bucket = monthBuckets.find((item) => item.key === monthKey(new Date(movement.date)));
           if (bucket) bucket[movement.type === 'entrada' ? 'incoming' : 'outgoing'] += movementTotal(movement);
         });
+
         if (window.Chart) {
           if (cashChart) cashChart.destroy();
           cashChart = new Chart(document.getElementById('cash-chart'), {
             type: 'bar',
-            data: { labels: monthBuckets.map((item) => item.label), datasets: [
-              { label: 'Entradas', data: monthBuckets.map((item) => item.incoming), backgroundColor: '#0f766e', borderRadius: 4 },
-              { label: 'Saídas', data: monthBuckets.map((item) => item.outgoing), backgroundColor: '#d97706', borderRadius: 4 }
-            ] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}` } } }, scales: { y: { beginAtZero: true, ticks: { callback: (value) => formatCurrency(value) } } } }
+            data: {
+              labels: monthBuckets.map((item) => item.label.toUpperCase()),
+              datasets: [
+                { label: 'Entradas (R$)', data: monthBuckets.map((item) => item.incoming), backgroundColor: '#10b981', borderRadius: 6, borderSkipped: false },
+                { label: 'Saídas (R$)', data: monthBuckets.map((item) => item.outgoing), backgroundColor: '#f59e0b', borderRadius: 6, borderSkipped: false }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 600 },
+                    color: '#64748b',
+                    usePointStyle: true,
+                    boxWidth: 8
+                  }
+                },
+                tooltip: {
+                  backgroundColor: '#0f172a',
+                  titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 700 },
+                  bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
+                  padding: 10,
+                  cornerRadius: 8,
+                  callbacks: {
+                    label: (context) => ` ${context.dataset.label}: ${formatCurrency(context.raw)}`
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  grid: { display: false },
+                  ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 600 }, color: '#64748b' }
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: 'rgba(226, 232, 240, 0.7)' },
+                  ticks: {
+                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 },
+                    color: '#64748b',
+                    callback: (value) => formatCurrency(value)
+                  }
+                }
+              }
+            }
           });
+
           if (productsChart) productsChart.destroy();
           const topProducts = products.slice(0, 5);
           productsChart = new Chart(document.getElementById('products-chart'), {
             type: 'bar',
-            data: { labels: topProducts.length ? topProducts.map((item) => item.description) : ['Sem saídas no período'], datasets: [{ label: 'Quantidade expedida', data: topProducts.length ? topProducts.map((item) => item.quantity) : [0], backgroundColor: '#0284c7', borderRadius: 4 }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+            data: {
+              labels: topProducts.length ? topProducts.map((item) => item.description) : ['Sem saídas no período'],
+              datasets: [{
+                label: 'Quantidade expedida',
+                data: topProducts.length ? topProducts.map((item) => item.quantity) : [0],
+                backgroundColor: '#0284c7',
+                borderRadius: 6,
+                borderSkipped: false
+              }]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  backgroundColor: '#0f172a',
+                  padding: 10,
+                  cornerRadius: 8,
+                  titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 700 },
+                  bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+                }
+              },
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  grid: { color: 'rgba(226, 232, 240, 0.7)' },
+                  ticks: { precision: 0, font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 }, color: '#64748b' }
+                },
+                y: {
+                  grid: { display: false },
+                  ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: 600 }, color: '#334155' }
+                }
+              }
+            }
           });
         }
       };
+
       const updateClockDisplay = () => {
         const now = new Date();
         document.getElementById('clock-current-time').textContent = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(now);
         document.getElementById('clock-current-date').textContent = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(now);
       };
+
       const render = () => {
         renderDashboard();
         renderProducts();
@@ -455,6 +1848,8 @@
         if (!document.getElementById('panel-reports').hidden) renderReports();
         if (window.lucide) window.lucide.createIcons();
       };
+
+      // Controle de Abas
       const setTab = (name) => {
         if (!titles[name]) return;
         const allowedTabs = {
@@ -463,12 +1858,20 @@
           Funcionário: ['dashboard', 'timeclock']
         };
         if (!allowedTabs[activeUser?.role]?.includes(name)) return;
+        
         document.querySelectorAll('.nav-button').forEach((button) => button.setAttribute('aria-current', button.dataset.tab === name ? 'page' : 'false'));
         document.querySelectorAll('.tab-panel').forEach((panel) => { panel.hidden = panel.id !== `panel-${name}`; });
         document.getElementById('page-title').textContent = titles[name];
         document.getElementById('breadcrumb').textContent = titles[name].toLocaleUpperCase('pt-BR');
+        
+        // Fecha menu mobile se estiver aberto
+        closeMobileSidebar();
+        
         if (name === 'reports') renderReports();
+        if (window.lucide) window.lucide.createIcons();
       };
+
+      // Ativação do Usuário
       const activateUser = (user) => {
         activeUser = user;
         const initials = user.name.split(' ').slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('pt-BR');
@@ -477,16 +1880,48 @@
         document.getElementById('sidebar-avatar').textContent = initials;
         document.getElementById('sidebar-user').textContent = user.name;
         document.getElementById('sidebar-role').textContent = user.role;
+        
         document.querySelectorAll('.nav-button[data-role="admin"]').forEach((button) => { button.hidden = user.role !== 'Administrador'; });
         document.querySelectorAll('.nav-button[data-role="operation"]').forEach((button) => { button.hidden = !['Administrador', 'Operador'].includes(user.role); });
+        
         document.getElementById('login-screen').hidden = true;
         document.getElementById('app-shell').classList.remove('hidden');
         setTab(user.role === 'Funcionário' ? 'timeclock' : 'dashboard');
         render();
       };
 
+      // Handlers de Menu Mobile
+      const openMobileSidebar = () => {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+        document.getElementById('sidebar-backdrop').classList.remove('hidden');
+      };
+      const closeMobileSidebar = () => {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebar-backdrop').classList.add('hidden');
+      };
+
+      document.getElementById('mobile-menu-open').addEventListener('click', openMobileSidebar);
+      document.getElementById('sidebar-close').addEventListener('click', closeMobileSidebar);
+      document.getElementById('sidebar-backdrop').addEventListener('click', closeMobileSidebar);
+
+      // Eventos de Navegação
       document.querySelectorAll('.nav-button').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.tab)));
       document.querySelectorAll('[data-go]').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.go)));
+
+      // Chips de Acesso Rápido na tela de login
+      document.querySelectorAll('.demo-login-chip').forEach((button) => {
+        button.addEventListener('click', () => {
+          document.querySelectorAll('.demo-login-chip').forEach(b => b.classList.remove('border-brand-600', 'bg-brand-50', 'ring-2', 'ring-brand-500/20'));
+          button.classList.add('border-brand-600', 'bg-brand-50', 'ring-2', 'ring-brand-500/20');
+          const emailInput = document.querySelector('#login-form input[name="email"]');
+          const passInput = document.querySelector('#login-form input[name="password"]');
+          emailInput.value = button.dataset.email;
+          passInput.value = button.dataset.pass;
+          document.getElementById('login-error').classList.add('hidden');
+        });
+      });
+
+      // Formulário de Login
       document.getElementById('login-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
@@ -507,6 +1942,8 @@
         document.getElementById('login-error').classList.add('hidden');
         activateUser(session);
       });
+
+      // Botão de Logout
       document.getElementById('logout-button').addEventListener('click', () => {
         sessionStorage.removeItem('armazem-wms-session');
         activeUser = null;
@@ -514,6 +1951,7 @@
         document.getElementById('login-screen').hidden = false;
         document.getElementById('login-form').reset();
       });
+
       document.getElementById('product-search').addEventListener('input', renderProducts);
       document.getElementById('report-month').addEventListener('change', renderReports);
       document.getElementById('incoming-form').addEventListener('input', updateWeight);
@@ -531,6 +1969,7 @@
         document.getElementById('scan-reference-field').hidden = outgoing;
         destination.required = outgoing;
       };
+
       const playScanBeep = () => {
         try {
           const AudioContextType = window.AudioContext || window.webkitAudioContext;
@@ -548,9 +1987,11 @@
             oscillator.stop(audio.currentTime + 0.12);
             oscillator.onended = () => audio.close();
           }
-        } catch (error) { /* A confirmação visual continua disponível sem áudio. */ }
+        } catch (error) { /* Áudio opcional */ }
         if (navigator.vibrate) navigator.vibrate(70);
       };
+
+      // Cadastro de Funcionário
       document.getElementById('employee-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -562,8 +2003,10 @@
         save();
         form.reset();
         render();
-        toast(`Acesso de ${employee.name} cadastrado. O funcionário já pode registrar o ponto.`);
+        toast(`Acesso de ${employee.name} cadastrado com sucesso.`);
       });
+
+      // Registro de Ponto
       document.getElementById('attendance-action').addEventListener('click', () => {
         const employeeId = getClockEmployeeId();
         const employee = state.employees.find((item) => item.id === employeeId && item.active);
@@ -578,6 +2021,8 @@
         renderAttendance();
         toast(`${type === 'entrada' ? 'Entrada' : 'Saída'} registrada às ${new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(now)}.`);
       });
+
+      // Formulário do Scanner (Bipagem)
       document.getElementById('scan-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -586,9 +2031,9 @@
         const product = state.products.find((item) => String(item.barcode).trim().toLocaleLowerCase('pt-BR') === barcode.toLocaleLowerCase('pt-BR'));
         const result = document.getElementById('scan-result');
         if (!product) {
-          result.innerHTML = `<p class="text-sm font-semibold text-red-800">Código não encontrado: ${escapeHtml(barcode)}.</p>`;
-          result.className = 'rounded-md border border-red-200 bg-red-50 px-4 py-3';
-          return toast('Nenhum produto corresponde a esse código de barras.', 'warning');
+          result.innerHTML = `<p class="text-xs font-bold text-rose-800">Código não encontrado no armazém: ${escapeHtml(barcode)}.</p>`;
+          result.className = 'rounded-xl border border-rose-200 bg-rose-50 p-4';
+          return toast('Nenhum produto cadastrado com esse código de barras.', 'warning');
         }
         const quantity = Number(data.get('quantity'));
         const type = String(data.get('scanType'));
@@ -597,22 +2042,43 @@
         if (!Number.isFinite(quantity) || quantity <= 0) return toast('Informe uma quantidade maior que zero.', 'warning');
         if (type === 'saida' && quantity > Number(product.quantity)) return toast(`Saldo insuficiente para ${product.description}. Disponível: ${formatNumber(product.quantity)} ${product.unit}.`, 'critical');
         if (type === 'saida' && !destination) return toast('Informe o destino da saída.', 'warning');
+        
         const before = Number(product.quantity);
         product.quantity = type === 'entrada' ? before + quantity : before - quantity;
         state.movements.unshift({ id: makeId('mov'), type, productId: product.id, description: product.description, quantity, unitValue: Number(product.unitValue) || 0, reference: type === 'entrada' ? `Bipagem · ${reference || 'Entrada'}` : `Bipagem · ${destination}`, date: new Date().toISOString(), operator: activeUser.name });
         save();
         playScanBeep();
         render();
-        result.innerHTML = `<div class="flex items-center justify-between gap-3"><div><p class="text-sm font-bold text-slate-900">${escapeHtml(product.description)}</p><p class="mt-1 text-xs text-slate-600">${type === 'entrada' ? 'Entrada registrada' : 'Saída registrada'} · ${formatNumber(quantity)} ${escapeHtml(product.unit)}</p></div><span class="rounded-full ${getStatus(product) === 'critical' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'} px-3 py-1 text-xs font-bold">Saldo ${formatNumber(product.quantity)}</span></div>`;
-        result.className = 'rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3';
+        
+        result.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <i data-lucide="check" class="h-5 w-5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-slate-900">${escapeHtml(product.description)}</p>
+                <p class="text-[11px] text-slate-500">${type === 'entrada' ? 'Entrada confirmada' : 'Saída confirmada'} de ${formatNumber(quantity)} ${escapeHtml(product.unit)}</p>
+              </div>
+            </div>
+            <span class="font-mono text-xs font-bold px-3 py-1 rounded-lg ${getStatus(product) === 'critical' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
+              Novo Saldo: ${formatNumber(product.quantity)} ${escapeHtml(product.unit)}
+            </span>
+          </div>
+        `;
+        result.className = 'rounded-xl border border-emerald-200 bg-emerald-50/60 p-4';
+        if (window.lucide) window.lucide.createIcons({ root: result });
+
         form.elements.barcode.value = '';
         form.elements.quantity.value = '1';
         form.elements.reference.value = '';
         form.elements.destination.value = '';
         form.elements.barcode.focus();
-        if (type === 'saida' && getStatus(product) === 'critical') toast(`${product.description} atingiu nível crítico após a bipagem.`, 'critical');
+        if (type === 'saida' && getStatus(product) === 'critical') toast(`${product.description} atingiu nível crítico de reposição.`, 'critical');
         else toast(`Bip confirmado: ${product.description}.`);
       });
+
+      // Inventário
       document.getElementById('inventory-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -627,9 +2093,10 @@
         save();
         form.reset();
         render();
-        toast(difference === 0 ? `Inventário conferido: ${product.description} sem divergências.` : `Inventário ajustado: ${product.description}, diferença ${difference > 0 ? '+' : ''}${formatNumber(difference)} ${product.unit}.`, difference === 0 ? 'success' : 'warning');
+        toast(difference === 0 ? `Inventário conferido: ${product.description} com 100% de acurácia.` : `Inventário ajustado: ${product.description}, divergência ${difference > 0 ? '+' : ''}${formatNumber(difference)} ${product.unit}.`, difference === 0 ? 'success' : 'warning');
       });
 
+      // Cadastro de Produto
       document.getElementById('product-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -640,9 +2107,10 @@
         if (!product.description || product.quantity < 0 || product.minimum < 0 || product.weight < 0 || !Number.isFinite(product.unitValue) || product.unitValue < 0) return toast('Confira os dados do produto antes de salvar.', 'warning');
         state.products.unshift(product);
         save(); render(); form.reset();
-        toast('Produto cadastrado com sucesso.');
+        toast('Produto cadastrado com sucesso no catálogo.');
       });
 
+      // Entrada Manual
       document.getElementById('incoming-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -657,6 +2125,7 @@
         toast(`Entrada de ${formatNumber(quantity)} ${product.unit} registrada para ${product.description}.`);
       });
 
+      // Saída Manual
       document.getElementById('outgoing-form').addEventListener('submit', (event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -677,6 +2146,7 @@
         else toast(`Saída de ${formatNumber(quantity)} ${product.unit} registrada para ${destination}.`);
       });
 
+      // Leitor NF-e
       const useInvoiceReference = (text) => {
         const key = text.match(/\b\d{44}\b/);
         let reference = key ? key[0] : '';
@@ -686,31 +2156,38 @@
             const invoiceNumber = xml.getElementsByTagNameNS('*', 'nNF')[0]?.textContent?.trim();
             const series = xml.getElementsByTagNameNS('*', 'serie')[0]?.textContent?.trim();
             if (invoiceNumber) reference = series ? `${invoiceNumber} · Série ${series}` : invoiceNumber;
-          } catch (error) { /* Referência manual continua disponível para XML inválido. */ }
+          } catch (error) { /* Fallback */ }
         }
         if (!reference && text.trim() && !text.trim().startsWith('<')) reference = text.trim().slice(0, 100);
-        if (!reference) return toast('Não encontrei uma chave de 44 dígitos ou número da NF-e.', 'warning');
+        if (!reference) return toast('Não encontrei uma chave de 44 dígitos ou número de NF-e.', 'warning');
         document.querySelector('.invoice-field').value = reference;
-        toast('Referência da nota preenchida. Confira antes de registrar.');
+        toast('Referência da NF-e preenchida com sucesso.');
       };
+      
       document.getElementById('parse-xml').addEventListener('click', () => useInvoiceReference(document.getElementById('xml-input').value));
       document.getElementById('xml-file').addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = () => { document.getElementById('xml-input').value = String(reader.result || ''); toast('XML carregado. Use “Usar referência da NF-e” para preencher o lançamento.'); };
+        reader.onload = () => { document.getElementById('xml-input').value = String(reader.result || ''); toast('XML carregado. Clique em "Extrair e Preencher Referência".'); };
         reader.onerror = () => toast('Não foi possível ler o arquivo XML.', 'warning');
         reader.readAsText(file);
       });
 
+      // Inicialização do Relógio
       updateClockDisplay();
       window.setInterval(updateClockDisplay, 1000);
+
+      // Verificação de Sessão Ativa
       try {
         const session = JSON.parse(sessionStorage.getItem('armazem-wms-session'));
         const registeredEmployee = state.employees.find((employee) => employee.email.toLocaleLowerCase('pt-BR') === session?.email && employee.id === session?.employeeId && employee.active);
         const demoUser = demoUsers[session?.email];
         if (session && (demoUser?.role === session.role || registeredEmployee?.id)) activateUser(session);
-      } catch (error) { sessionStorage.removeItem('armazem-wms-session'); }
+      } catch (error) { 
+        sessionStorage.removeItem('armazem-wms-session'); 
+      }
+
       if (window.lucide) window.lucide.createIcons();
     })();
   </script>
