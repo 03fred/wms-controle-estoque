@@ -1,23 +1,30 @@
-# Armazém WMS
+# Controle de Estoque
 
-MVP estático para controle de estoque de pequeno porte. Abra `index.html` no navegador ou publique a raiz deste repositório no GitHub Pages.
+Aplicação estática para operação de estoque, equipe e inventário. Abra `index.html` em um navegador ou publique a raiz do repositório no GitHub Pages.
 
 ## Demonstração
 
 - Administrador: `admin@armazem.local` / `admin123`
 - Operador: `operador@armazem.local` / `operador123`
+- Funcionário: `funcionario@armazem.local` / `ponto123`
 
-O perfil de operador acessa o dashboard e as movimentações. O administrador também acessa o cadastro de produtos e os relatórios.
+O administrador gerencia produtos, funcionários e relatórios. O operador registra movimentos e inventário. O funcionário acessa seu próprio registro demonstrativo de ponto.
 
 ## Recursos
 
-- Cadastro e alerta de estoque mínimo.
-- Entradas simuladas com referência de NF-e e saídas com bloqueio de saldo insuficiente.
-- Relatórios mensais com gráficos, resumo financeiro estimado e produtos expedidos.
-- Dados de demonstração e alterações persistidos no `localStorage` do navegador.
+- Cadastro de produtos com código de barras, saldo, estoque mínimo, peso e valor de referência.
+- Entradas e saídas manuais ou pela tela de bipagem. Scanners USB que digitam o código e enviam Enter podem ser usados como entrada de texto.
+- Cadastro de funcionários com acesso por e-mail e PIN.
+- Registro alternado de entrada e saída do expediente, com histórico local.
+- Contagem de inventário, registro da diferença e ajuste do saldo do produto.
+- Dashboard, alertas, movimentações e relatórios mensais com gráficos.
+- Valores financeiros estimados a partir da quantidade movimentada vezes o valor unitário; não representam transações de caixa reais.
+- Dados persistidos no `localStorage` do navegador.
 
-## Publicação
+## Limitações
 
-No GitHub, habilite **Settings > Pages**, selecione a branch principal e a pasta `/ (root)`. O site será publicado como uma página estática.
+Login, PIN, autorização e dados são demonstrativos e ficam no navegador; não há sincronização entre dispositivos. Não use informações reais de funcionários ou operação. Autenticação, folha de ponto e armazenamento de produção exigem backend, controles de acesso e infraestrutura adequados.
 
-> Login, perfis e dados são apenas demonstrativos e ficam no navegador. Não use credenciais ou informações reais: autenticação e autorização de produção exigem um backend.
+## GitHub Pages
+
+Configure **Settings > Pages** para publicar a branch `main` a partir da pasta `/ (root)`.
